@@ -73,8 +73,8 @@ def main():
     actions['Date Refresh'] = date_refresh
     
     # Étape 5 : Export local (Fichiers)
-    logger.info("Sauvegarde locale...")
-    export_data(actions, OUTPUT_DIR)
+    #logger.info("Sauvegarde locale...")
+    #export_data(actions, OUTPUT_DIR)
     
     # Étape 6 : Export Distant (Base de données)
     logger.info("Sauvegarde vers le Cloud (Supabase)...")
