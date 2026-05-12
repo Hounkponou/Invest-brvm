@@ -70,6 +70,12 @@ def main():
     if 'PER' in actions.columns:
         actions['PER'] = actions['PER'].apply(lambda x: int(x)/100 if str(x).isdigit() else x)
 
+    if 'Variation (%)' in actions.columns:
+        actions['Variation (%)'] = actions['Variation (%)'].apply(lambda x: int(x)/100 if str(x).lstrip('-').isdigit() else x)
+
+    if 'Pourcentage de la valeur globale échangée' in actions.columns:
+        actions['Pourcentage de la valeur globale échangée'] = actions['Pourcentage de la valeur globale échangée'].apply(lambda x: int(x)/100 if str(x).isdigit() else x)
+
     actions['Date Refresh'] = date_refresh
     
     # Étape 5 : Export local (Fichiers)
