@@ -1,0 +1,78 @@
+:root {
+  /* Palette TradingView / Terminal Pro */
+  --bg-base: #0B0E14; 
+  --bg-panel: #151924;
+  --bg-hover: #1E2433;
+  --border-color: #2A2E39;
+  --text-main: #D1D4DC;
+  --text-muted: #8B98A5;
+  --accent-blue: #2962FF;
+  --accent-blue-hover: #1E53E5;
+  --up-color: #089981;
+  --up-bg: rgba(8, 153, 129, 0.15);
+  --down-color: #F23645;
+  --down-bg: rgba(242, 54, 69, 0.15);
+  --warn-color: #FFB300;
+  --warn-bg: rgba(255, 179, 0, 0.15);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-base); color: var(--text-main); overflow: hidden; }
+
+/* LAYOUT PRINCIPAL (Sidebar + Contenu) */
+.app-container { display: flex; height: 100vh; width: 100vw; }
+
+/* SIDEBAR */
+.sidebar { width: 250px; background-color: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px 0; z-index: 10; }
+.sidebar-brand { font-size: 1.5em; font-weight: 900; color: white; padding: 0 20px 30px 20px; letter-spacing: 1px; }
+.sidebar-brand span { color: var(--accent-blue); }
+.nav-btn { background: transparent; border: none; color: var(--text-muted); padding: 15px 20px; text-align: left; font-size: 1em; font-weight: 500; cursor: pointer; transition: 0.2s; border-left: 3px solid transparent; width: 100%; }
+.nav-btn:hover { background-color: var(--bg-hover); color: var(--text-main); }
+.nav-btn.active { background-color: var(--bg-hover); color: white; border-left-color: var(--accent-blue); }
+
+/* CONTENU PRINCIPAL */
+.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* HEADER (Recherche & Filtres) */
+.top-header { height: 70px; background-color: var(--bg-base); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+.search-bar { background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 15px; border-radius: 6px; width: 300px; outline: none; transition: 0.2s; }
+.search-bar:focus { border-color: var(--accent-blue); }
+.time-filter { background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 15px; border-radius: 6px; outline: none; cursor: pointer; font-weight: bold; }
+
+/* VUES (Scrollables) */
+.view-area { flex: 1; overflow-y: auto; padding: 30px; }
+.view-area::-webkit-scrollbar { width: 8px; }
+.view-area::-webkit-scrollbar-track { background: var(--bg-base); }
+.view-area::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+/* GRILLES */
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; margin-bottom: 40px; }
+
+/* CARTES ACTIONS */
+.stock-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; }
+.stock-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); border-color: var(--text-muted); }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+.stock-symbol { font-size: 1.4em; font-weight: 800; color: white; display: block; margin-bottom: 2px; }
+.stock-name { font-size: 0.85em; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; display: block; }
+.stock-price { font-size: 1.4em; font-weight: bold; text-align: right; }
+.stock-var { font-size: 0.9em; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+.var-up { color: var(--up-color); background: var(--up-bg); }
+.var-down { color: var(--down-color); background: var(--down-bg); }
+
+/* BADGES (RSI & VALO) */
+.badges-container { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+.badge { font-size: 0.75em; font-weight: 700; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid; }
+
+/* BOUTONS ET FORMULAIRES */
+.btn-primary { background-color: var(--accent-blue); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.btn-primary:hover { background-color: var(--accent-blue-hover); }
+.form-group label { display: block; font-size: 0.85em; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
+.form-group input, .form-group select { width: 100%; background: var(--bg-base); border: 1px solid var(--border-color); color: white; padding: 12px; border-radius: 6px; }
+
+/* TABLEAUX */
+table { width: 100%; border-collapse: collapse; background: var(--bg-panel); border-radius: 8px; overflow: hidden; }
+th { background: var(--bg-base); color: var(--text-muted); font-size: 0.85em; text-transform: uppercase; padding: 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+td { padding: 15px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+tr:hover td { background: var(--bg-hover); }
+
+.loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent-blue); font-weight: bold; font-size: 1.2em; }

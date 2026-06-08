@@ -24,7 +24,7 @@ load_dotenv(dotenv_path=ENV_PATH)
 def get_supabase_client() -> Client:
     """Initialise et retourne la connexion à Supabase."""
     
-    # On force la lecture du .env directement ici pour être sûr à 200%
+    # lecture du .env directement pour test
     BASE_DIR = Path(__file__).resolve().parent
     ENV_PATH = BASE_DIR / ".env"
     load_dotenv(dotenv_path=ENV_PATH, override=True)
@@ -32,7 +32,7 @@ def get_supabase_client() -> Client:
     url: str = os.environ.get("SUPABASE_URL")
     key: str = os.environ.get("SUPABASE_KEY")
 
-    # Tests séparés pour savoir le vrai coupable :
+    # Tests  :
     if not url:
         logger.error("🛑 CRITIQUE : SUPABASE_URL est vide ou introuvable !")
     if not key:
@@ -47,7 +47,7 @@ def export_to_supabase(df: pd.DataFrame) -> None:
     """Prépare et envoie le DataFrame vers Supabase."""
     logger.info("Préparation des données pour l'export Supabase...")
     
-    # 1. Copie pour ne pas modifier le DataFrame original en mémoire
+    # 1. Copie 
     actions = df.copy()
 
     # 2. Renommer les colonnes pour correspondre au SQL (minuscules et underscores)
