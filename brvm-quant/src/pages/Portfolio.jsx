@@ -74,30 +74,36 @@ export default function Portfolio() {
               </div>
             </div>
             
-            <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px' }}>
-              <div style={{ flex: 1, height: '200px', minWidth: '150px' }}>
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9em', fontWeight: 'bold', marginBottom: '10px' }}>Actifs</div>
+            {/* GRAPHIQUES (Corrigés pour le Mobile) */}
+            <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '30px' }}>
+              
+              <div style={{ flex: 1, height: isMobile ? '250px' : '200px', width: '100%' }}>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '1em', fontWeight: 'bold', marginBottom: '10px' }}>Répartition des Actifs</div>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={portfolioAnalytics.assetsChart} cx="50%" cy="50%" innerRadius={isMobile ? 30 : 40} outerRadius={isMobile ? 60 : 70} dataKey="value">
+                    <Pie data={portfolioAnalytics.assetsChart} cx="50%" cy="50%" innerRadius="40%" outerRadius="75%" dataKey="value" paddingAngle={2}>
                       {portfolioAnalytics.assetsChart.map((e, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip formatter={(value) => `${value.toLocaleString()} F`} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              {isMobile && <div style={{ borderTop: '1px solid var(--border-color)', width: '100%' }}></div>}
-              <div style={{ flex: 1, height: '200px', minWidth: '150px', borderLeft: isMobile ? 'none' : '1px solid var(--border-color)' }}>
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9em', fontWeight: 'bold', marginBottom: '10px' }}>Secteurs</div>
+
+              {/* Ligne de séparation uniquement sur mobile */}
+              {isMobile && <div style={{ borderTop: '1px solid var(--border-color)', margin: '0 10px' }}></div>}
+              
+              <div style={{ flex: 1, height: isMobile ? '250px' : '200px', width: '100%', borderLeft: isMobile ? 'none' : '1px solid var(--border-color)' }}>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '1em', fontWeight: 'bold', marginBottom: '10px' }}>Exposition Sectorielle</div>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={portfolioAnalytics.sectorsChart} cx="50%" cy="50%" innerRadius={isMobile ? 30 : 40} outerRadius={isMobile ? 60 : 70} dataKey="value">
+                    <Pie data={portfolioAnalytics.sectorsChart} cx="50%" cy="50%" innerRadius="40%" outerRadius="75%" dataKey="value" paddingAngle={2}>
                       {portfolioAnalytics.sectorsChart.map((e, i) => <Cell key={i} fill={PIE_COLORS[(i + 3) % PIE_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip formatter={(value) => `${value.toLocaleString()} F`} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
+
             </div>
           </div>
           
