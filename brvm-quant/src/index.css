@@ -76,3 +76,30 @@ td { padding: 15px; border-bottom: 1px solid var(--border-color); color: var(--t
 tr:hover td { background: var(--bg-hover); }
 
 .loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent-blue); font-weight: bold; font-size: 1.2em; }
+
+/* Responsive : Mobile et tablettes */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    display: none !important; /* Masque la barre latérale sur mobile */
+  }
+
+  .main-content {
+    width: 100%;
+  }
+
+  /* Rendre les tableaux scrollables horizontalement */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  /* Ajuster les cartes */
+  .stock-card {
+    width: 100% !important;
+  }
+}
