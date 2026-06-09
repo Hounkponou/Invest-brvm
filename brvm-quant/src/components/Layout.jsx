@@ -14,7 +14,7 @@ export default function Layout(props) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fermer le menu mobile quand on change de page
+  // Fermer le menu mobile automatiquement lors d'un changement de page
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
@@ -22,7 +22,7 @@ export default function Layout(props) {
   return (
     <div className="app-container" style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-base)', color: 'var(--text-main)', overflow: 'hidden' }}>
       
-      {/* OVERLAY SOMBRE : Z-index massif (9998) pour tout recouvrir */}
+      {/* OVERLAY SOMBRE */}
       {isMobile && isMobileMenuOpen && (
         <div 
           onClick={() => setIsMobileMenuOpen(false)}
@@ -30,21 +30,21 @@ export default function Layout(props) {
         />
       )}
 
-      {/* SIDEBAR : transform: translateX est la méthode la plus robuste pour faire glisser un menu */}
+      {/* SIDEBAR COULISSANTE */}
       <div style={{
         position: isMobile ? 'fixed' : 'relative',
         top: 0,
         left: 0,
         height: '100vh',
         width: '250px',
-        zIndex: 9999, // Au-dessus de l'overlay
+        zIndex: 9999,
         backgroundColor: 'var(--bg-panel)',
         transform: isMobile ? (isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
         transition: 'transform 0.3s ease-in-out',
         boxShadow: isMobile && isMobileMenuOpen ? '5px 0 15px rgba(0,0,0,0.5)' : 'none'
       }}>
         <Sidebar 
-          isSidebarOpen={true} // On force à true car le conteneur parent gère la visibilité
+          isSidebarOpen={true} 
           user={props.user} 
           handleLogout={props.handleLogout} 
         />
@@ -52,25 +52,16 @@ export default function Layout(props) {
 
       <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', width: '100%' }}>
         
-        {/* HEADER DYNAMIQUE */}
-        <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)' }}>
-          {isMobile && (
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', fontSize: '2em', padding: '10px 15px', cursor: 'pointer', zIndex: 10 }}
-            >
-              ☰
-            </button>
-          )}
-          <div style={{ flex: 1 }}>
-            <TopHeader 
-              isSidebarOpen={props.isSidebarOpen} setIsSidebarOpen={props.setIsSidebarOpen}
-              searchQuery={props.searchQuery} setSearchQuery={props.setSearchQuery}
-              globalSector={props.globalSector} setGlobalSector={props.setGlobalSector}
-              resultCount={props.resultCount}
-              isDarkMode={props.isDarkMode} toggleTheme={props.toggleTheme}
-            />
-          </div>
+        {/* HEADER : On supprime le bouton d'ici, et on passe l'action au TopHeader */}
+        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)' }}>
+          <TopHeader 
+            isSidebarOpen={isMobile ? isMobileMenuOpen : props.isSidebarOpen} 
+            setIsSidebarOpen={isMobile ? setIsMobileMenuOpen : props.setIsSidebarOpen}
+            searchQuery={props.searchQuery} setSearchQuery={props.setSearchQuery}
+            globalSector={props.globalSector} setGlobalSector={props.setGlobalSector}
+            resultCount={props.resultCount}
+            isDarkMode={props.isDarkMode} toggleTheme={props.toggleTheme}
+          />
         </div>
         
         <div className="view-area" style={{ padding: isMobile ? '15px' : '30px', flex: 1 }}>
