@@ -11,7 +11,7 @@ export default function Sidebar({
   return (
     <nav className="sidebar" style={{ display: isSidebarOpen ? 'flex' : 'none', flexDirection: 'column', width: '260px', backgroundColor: 'var(--bg-panel)', borderRight: '1px solid var(--border-color)', padding: '25px 20px', zIndex: 50, transition: 'all 0.3s ease' }}>
       
-      {/* 1. NOUVEAU LOGO DESIGN */}
+      {/* 1.  NOUVEAU LOGO DESIGN */}
       <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '40px' }}>
         <div style={{
           background: 'linear-gradient(135deg, var(--accent-blue), #00d2ff)',
