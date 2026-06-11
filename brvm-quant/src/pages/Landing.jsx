@@ -21,7 +21,7 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
             </svg>
           </div>
           <div style={{ fontSize: '1.5em', fontWeight: '900', letterSpacing: '0.5px', color: 'var(--text-main)' }}>
-            INVEST<span style={{ background: 'linear-gradient(90deg, var(--accent-blue), #00d2ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>PRO</span>
+            Invest<span style={{ background: 'linear-gradient(90deg, var(--accent-blue), #00d2ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Pro</span>
           </div>
         </div>
 
@@ -34,15 +34,15 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
           {/* Boutons d'en-tête */}
           {user ? (
             <button onClick={() => navigate('/dashboard')} style={{ padding: '10px 20px', fontSize: '0.95em', background: 'transparent', color: 'var(--text-main)', border: '2px solid var(--border-color)', borderRadius: '50px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--accent-blue)'; e.currentTarget.style.color = 'var(--accent-blue)'; }} onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.color = 'var(--text-main)'; }}>
-              Mon Dashboard
+              My Dashboard
             </button>
           ) : (
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
               <span onClick={() => { setIsSignUp(false); setShowAuthModal(true); }} style={{ fontSize: '0.95em', color: 'var(--text-muted)', fontWeight: 'bold', cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = 'var(--text-main)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}>
-                Connexion
+                Login
               </span>
               <button onClick={() => { setIsSignUp(true); setShowAuthModal(true); }} style={{ padding: '10px 20px', fontSize: '0.95em', background: 'var(--text-main)', color: 'var(--bg-base)', border: 'none', borderRadius: '50px', fontWeight: 'bold', cursor: 'pointer', transition: 'opacity 0.2s' }} onMouseOver={e => e.currentTarget.style.opacity = '0.8'} onMouseOut={e => e.currentTarget.style.opacity = '1'}>
-                S'inscrire
+                Sign up
               </button>
             </div>
           )}
@@ -54,10 +54,10 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
       {/* ========================================== */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 20px', textAlign: 'center' }}>
         <h1 style={{ fontSize: '3.8em', margin: '0 0 20px 0', maxWidth: '850px', lineHeight: '1.1', letterSpacing: '-1px' }}>
-          L'investissement quantitatif arrive sur la BRVM.
+          BRVM Quantitative Analysis.
         </h1>
         <p style={{ fontSize: '1.2em', color: 'var(--text-muted)', marginBottom: '50px', maxWidth: '600px', lineHeight: '1.6' }}>
-          Analysez le marché en temps réel grâce à l'intelligence artificielle, testez vos stratégies sur 3 ans et gérez votre portefeuille dans un cloud sécurisé.
+          Analyze the market in real time, test your strategies, and manage your portfolio in a secure  environment.
         </p>
         
         {/* Le CTA Central (Unique et impactant) */}
@@ -69,7 +69,7 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
               onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(41, 98, 255, 0.6)'; }}
               onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(41, 98, 255, 0.4)'; }}
             >
-              Lancer une analyse IA ⚡
+              Run analysis on the market
             </button>
           ) : (
             <button 
@@ -78,7 +78,7 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
               onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(41, 98, 255, 0.6)'; }}
               onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(41, 98, 255, 0.4)'; }}
             >
-              Démarrer gratuitement 🚀
+              Get Started
             </button>
           )}
         </div>
@@ -92,8 +92,8 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
           <div className="feature-card" style={{ background: 'var(--bg-panel)', padding: '40px 30px', borderRadius: '16px', border: '1px solid var(--border-color)', flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '3em', marginBottom: '20px' }}>🤖</div>
-              <h3 style={{ margin: '0 0 15px 0', fontSize: '1.3em' }}>Scoring IA</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '1em', lineHeight: '1.6', margin: 0 }}>Chaque action est analysée techniquement et fondamentalement pour vous donner une note sur 10 instantanée.</p>
+              <h3 style={{ margin: '0 0 15px 0', fontSize: '1.3em' }}>Scoring</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1em', lineHeight: '1.6', margin: 0 }}>Each stock is analyzed from both a technical and fundamental perspective to provide you with an instant score out of 10</p>
             </div>
             <button 
               onClick={() => user ? navigate('/screener') : setShowAuthModal(true)}
@@ -101,7 +101,7 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
               onMouseOver={e => { e.currentTarget.style.background = 'var(--accent-blue)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'scale(1.05)'; }}
               onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--accent-blue)'; e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              Ouvrir le Screener
+              Open Screener
             </button>
           </div>
 
@@ -110,7 +110,7 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
             <div>
               <div style={{ fontSize: '3em', marginBottom: '20px' }}>⏱️</div>
               <h3 style={{ margin: '0 0 15px 0', fontSize: '1.3em' }}>Backtesting</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '1em', lineHeight: '1.6', margin: 0 }}>Notre machine à remonter le temps prouve la rentabilité de vos stratégies sur les 3 dernières années.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1em', lineHeight: '1.6', margin: 0 }}>Our time-traveling machine proves the profitability of your strategies over the last 3 years.</p>
             </div>
             <button 
               onClick={() => user ? navigate('/simulator') : setShowAuthModal(true)}
@@ -118,7 +118,7 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
               onMouseOver={e => { e.currentTarget.style.background = '#9f7aea'; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'scale(1.05)'; }}
               onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9f7aea'; e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              Tester une stratégie
+              Test your strategy
             </button>
           </div>
 
@@ -126,8 +126,8 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
           <div className="feature-card" style={{ background: 'var(--bg-panel)', padding: '40px 30px', borderRadius: '16px', border: '1px solid var(--border-color)', flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '3em', marginBottom: '20px' }}>☁️</div>
-              <h3 style={{ margin: '0 0 15px 0', fontSize: '1.3em' }}>Gestion Cloud</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '1em', lineHeight: '1.6', margin: 0 }}>Votre portefeuille est sauvegardé en toute sécurité. Retrouvez votre suivi de risque et d'allocation partout.</p>
+              <h3 style={{ margin: '0 0 15px 0', fontSize: '1.3em' }}>Cloud Management</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1em', lineHeight: '1.6', margin: 0 }}>Your portfolio is securely backed up. Access your risk monitoring and allocation tracking from anywhere.</p>
             </div>
             <button 
               onClick={() => user ? navigate('/portfolio') : setShowAuthModal(true)}
@@ -135,7 +135,7 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
               onMouseOver={e => { e.currentTarget.style.background = 'var(--up-color)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'scale(1.05)'; }}
               onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--up-color)'; e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              Créer mon Portefeuille
+              Create My Portfolio
             </button>
           </div>
 
@@ -143,7 +143,7 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
       </main>
 
       <footer style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-panel)', marginTop: 'auto' }}>
-        © 2026 Invest Pro. Tous droits réservés.
+        © 2026 Invest Pro. All rights reserved.
       </footer>
     </div>
   );
