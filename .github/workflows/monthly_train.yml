@@ -1,0 +1,33 @@
+name: Réentraînement Mensuel du Modèle
+
+on:
+  schedule:
+    - cron: '0 2 1 * *' # À 02:00 le 1er jour du mois
+  workflow_dispatch:
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./brvm-prediction
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - run: pip install -r requirements.txt
+      
+      - name: Entraîner le modèle
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python main.py --task train
+
+      - name: Sauvegarder le nouveau modèle sur GitHub
+        run: |
+          git config --global user.name 'GitHub Action Bot'
+          git config --global user.email 'action@github.com'
+          git add models/best_xgb_model.json
+          git commit -m "Automated model retraining update" || echo "No changes to commit"
+          git push
