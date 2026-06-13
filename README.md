@@ -13,33 +13,65 @@ Ce pipeline (Extract, Transform, Load) récupère les données de la Bourse Rég
 2. Pousser le code vers GitHub.
 3. Le workflow `.github/workflows/scraper.yml` prendra automatiquement le relais.
 
-# Projet Invest Pro 🚀
 
-**Invest Pro** est une application web de pointe dédiée à l'analyse financière et à la gestion de portefeuille sur la **BRVM** (Bourse Régionale des Valeurs Mobilières).
 
-Conçue pour les investisseurs exigeants, notre plateforme combine l'analyse fondamentale et technique pour transformer les données brutes du marché en décisions d'investissement éclairées.
+# 🚀 Invest Pro & BRVM-Quant
+
+**Invest Pro** est une plateforme intégrée d'analyse financière et de gestion de portefeuille sur la **BRVM**. Elle couple un tableau de bord d'investissement haute performance avec un moteur de prédiction quantitative alimenté par IA.
+
+---
+
+## 📈 Écosystème
+
+Le projet se divise en deux piliers :
+1. **Invest Pro (Frontend/Backend) :** Gestion de portefeuille, Screener, et Analyse Fondamentale.
+2. **BRVM-Quant (MLOps) :** Pipeline de données automatisé (Scraping/Transformation) et modèle d'apprentissage automatique (XGBoost) fournissant des signaux prédictifs à 15 jours.
+
+
+
+---
 
 ## 🌟 Fonctionnalités principales
 
-* **Analyse de Marché & Scoring IA :** Accédez à des insights en temps réel. Chaque action est évaluée par un algorithme propriétaire fournissant une note globale sur 10, basée sur des indicateurs fondamentaux et techniques.
-* **Backtest Lab :** Testez vos stratégies d'investissement sur 3 ans de données historiques. Vérifiez la rentabilité de vos idées (Plus-values + Dividendes) avant de passer à l'action.
-* **Portfolio Cloud :** Gérez vos actifs en toute sécurité. Suivez votre **Coût Moyen Pondéré (CMP)**, calculez vos performances latentes et recevez des recommandations automatiques (🔥 Renforcer, ✅ Conserver, 🚨 Vendre) basées sur notre scoring IA.
-* **Gestion de Positions Précise :** Ajoutez ou vendez vos positions de manière flexible. Notre système utilise une logique FIFO (First In, First Out) pour une gestion comptable rigoureuse.
-* **Screener Pro :** Filtrez les opportunités selon vos critères de valorisation (Sous-évaluées/Surévaluées) et vos indicateurs de momentum (RSI).
+### Plateforme de Gestion
+* **Portfolio Cloud :** Suivi en temps réel du Coût Moyen Pondéré (CMP) et performances latentes.
+* **Screener Pro :** Filtrage avancé par valorisation (PER) et momentum (RSI).
+* **Gestion FIFO :** Logique comptable rigoureuse pour vos positions.
+
+### Moteur Prédictif 
+* **Scoring :** Chaque action est notée sur 10 par un modèle XGBoost entraîné sur 10 ans d'historique.
+* **Signaux Quantitatifs :** Prédictions de probabilité de hausse à 15 jours, avec gestion automatisée des signaux (Achat Fort / Achat Modéré).
+* **Validation Continue :** Système de "Challenge" comparant en temps réel les prédictions passées à la réalité du marché pour ajuster la précision du modèle.
+
+---
 
 ## 🛠️ Stack Technique
 
-* **Frontend :** React.js avec Vite.
-* **Backend & Base de données :** Supabase (PostgreSQL & Authentification).
-* **Visualisation :** Recharts.
-* **Déploiement :** Vercel
-
-## 🚀 Prochaines étapes
-
-* [ ] Intégration d'alertes personnalisées par e-mail.
-* [ ] Ajout de nouveaux marchés financiers.
-* [ ] Exportation de rapports de performance en PDF.
-* [ ] Analyse prévisionnelle des actions
+* **Frontend :** React.js (Vite), Tailwind CSS, Recharts.
+* **Backend & Données :** Supabase (PostgreSQL), API REST.
+* **Pipeline (MLOps) :** Python (XGBoost, Scikit-Learn), GitHub Actions (Robotisation), Cron Jobs.
+* **Déploiement :** Vercel.
 
 ---
-*Développé pour une analyse intelligente de la BRVM.*
+
+## ⚙️ Automatisation & MLOps
+
+Le projet tourne en autonomie totale grâce à nos robots GitHub :
+- **Extraction Quotidienne :** Scraping automatique des données de la BRVM.
+- **Inférence :** Calcul nocturne des signaux de trading.
+- **Challenge :** Vérification quotidienne de la performance des signaux émis.
+- **Réentraînement Mensuel :** Mise à jour automatisée du modèle pour suivre les régimes de marché.
+
+
+
+---
+
+## 🚀 Roadmap
+
+- [x] Pipeline MLOps & Automatisation Cloud.
+- [ ] Alertes intelligentes par e-mail.
+- [ ] Exportation de rapports de performance en PDF.
+- [ ] Intégration de l'analyse macroéconomique.
+
+---
+*Développé pour une analyse intelligente et rigoureuse de la BRVM.*
