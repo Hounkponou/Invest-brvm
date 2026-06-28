@@ -18,39 +18,41 @@ import Simulator from './pages/Simulator';
 import Portfolio from './pages/Portfolio';
 
 // ==========================================
-// ALGORITHME QUANT : SIGNAUX DE TRADING
+// ALGORITHME QUANT PRO : ATR & VOLATILITÉ
 // ==========================================
 const calculateTradingPoints = (stock) => {
   const currentPrice = stock.close || 0;
   const sma = stock.sma_20 || currentPrice;
   const rsi = stock.rsi_14 || 50;
 
-  // 1. POINT D'ENTRÉE
+  // Estimation de la volatilité journalière (Proxy ATR)
+  const rawVolatility = Math.abs(stock.variation) > 0 ? (Math.abs(stock.variation) / 100) : 0.025;
+  const atr = stock.atr_14 || (currentPrice * rawVolatility);
+
+  // 1. Point d'entrée dynamique
   let entry = currentPrice;
   if (rsi > 65) {
-    entry = currentPrice * 0.95; // RSI très haut : on attend une correction de 5%
-  } else if (currentPrice > sma) {
-    entry = sma; // Tendance haussière : on achète sur le repli de la moyenne mobile
+    entry = currentPrice - atr; // Suracheté : attente d'un repli de 1x l'ATR
+  } else if (currentPrice > sma && currentPrice < sma + (atr * 2)) {
+    entry = sma; // Tendance haussière saine : achat sur support SMA 20
   } else {
-    entry = currentPrice * 0.98; // Tendance baissière ou neutre : on cherche un léger discount
+    entry = currentPrice - (atr * 0.5); // Contexte neutre : léger discount
   }
 
-  // 2. POINT DE SORTIE (Take Profit)
-  let exit = currentPrice * 1.08; // Base : Objectif +8%
+  // 2. Stop-Loss basé sur la volatilité (1.5x ATR sous l'entrée)
+  let stopLoss = entry - (1.5 * atr);
+
+  // 3. Objectif de sortie (Take Profit basé sur un ratio Risk/Reward > 2)
+  let exit = entry + (3.0 * atr); 
   if (rsi < 35) {
-    exit = currentPrice * 1.10; // Action survendue : potentiel de rebond plus fort (+10%)
-  } else if (currentPrice < sma) {
-    exit = sma; // Si le prix est sous la SMA, la moyenne devient la première résistance (sortie)
+    exit = entry + (4.0 * atr); // Suracheté : potentiel de rebond technique accru
   }
-
-  // 3. STOP-LOSS (Gestion du risque)
-  // On coupe si le prix chute de 5% en dessous de notre point d'entrée ciblé
-  let stopLoss = entry * 0.95;
 
   return {
-    entry: Math.round(entry),
+    entry: Math.round(Math.max(entry, 1)),
     exit: Math.round(exit),
-    stopLoss: Math.round(stopLoss)
+    stopLoss: Math.round(Math.max(stopLoss, 1)),
+    volatility: Math.round(atr)
   };
 };
 
@@ -99,7 +101,7 @@ export default function App() {
   const [isSelling, setIsSelling] = useState(false);
 
   // ==========================================
-  // 2. EFFETS (Chargement Session & Data)
+  // 2. EFFETS (Session & Synchronisation base)
   // ==========================================
   useEffect(() => {
     const savedTheme = localStorage.getItem('brvm_theme');
@@ -127,10 +129,10 @@ export default function App() {
         if (dateData[0]?.date) {
           const { data } = await supabase.from('full_stock_pro').select('*').eq('date', dateData[0].date);
           
-          // Enrichissement des données avec les points de trading IA
+          // Injection automatique des points de trading calculés
           const enrichedData = data ? data.map(stock => {
             const tradingPoints = calculateTradingPoints(stock);
-            return { ...stock, ...tradingPoints }; 
+            return { ...stock, ...tradingPoints };
           }) : [];
 
           console.log("Données enrichies chargées dans App.jsx :", enrichedData);
@@ -184,10 +186,7 @@ export default function App() {
     if (isSignUp) {
       const res = await supabase.auth.signUp({ email: authEmail, password: authPassword });
       error = res.error;
-      if(!error) {
-        alert("Inscription réussie !");
-        setShowAuthModal(false);
-      }
+      if(!error) { alert("Inscription réussie !"); setShowAuthModal(false); }
     } else {
       const res = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
       error = res.error;
@@ -324,12 +323,10 @@ export default function App() {
 
     return {
       sentiment: advances > declines ? 'Haussier' : (declines > advances ? 'Baissier' : 'Neutre'),
-      advances, 
-      declines, 
+      advances, declines, 
       totalVol: globallyFilteredMarket.reduce((acc, curr) => acc + (curr.volume || 0), 0), 
       count: globallyFilteredMarket.length,
-      top3, 
-      flop3
+      top3, flop3
     };
   }, [globallyFilteredMarket]);
 
@@ -397,7 +394,7 @@ export default function App() {
   }, [groupedPortfolio, marketData]);
 
   // ==========================================
-  // 5. CSS & RENDU
+  // 5. CSS STYLING VARIABLES ET RENDU
   // ==========================================
   const themeCSS = isDarkMode ? `
     :root {
@@ -438,7 +435,7 @@ export default function App() {
         />
       )}
 
-      {/* MODALE DE GRAPHIQUE HISTORIQUE */}
+      {/* MODALE DE GRAPHIQUE HISTORIQUE & STRATÉGIE IA */}
       {selectedStock && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--bg-base)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '30px 40px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -458,26 +455,36 @@ export default function App() {
             </div>
           </div>
 
-          {/* NOUVEAU BLOC : SIGNAUX DE TRADING IA */}
-          <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', border: '1px solid var(--accent-blue)' }}>
-            <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🎯 Entrée Optimale</div>
-              <div style={{ fontSize: '1.8em', color: 'var(--up-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.entry?.toLocaleString()} F</div>
-              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Prix d'achat conseillé</div>
+          {/* CRÉATION DU BLOC QUANT : SIGNAUX DE TRADING IA (ATR DYNAMIQUE) */}
+          <div style={{ marginBottom: '20px', background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', border: '1px solid var(--accent-blue)' }}>
+            <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+              <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🎯 Entrée Optimale</div>
+                <div style={{ fontSize: '1.8em', color: 'var(--up-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.entry?.toLocaleString()} F</div>
+                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Prix conseillé</div>
+              </div>
+              <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🚀 Objectif</div>
+                <div style={{ fontSize: '1.8em', color: 'var(--accent-blue)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.exit?.toLocaleString()} F</div>
+                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Take Profit</div>
+              </div>
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🛡️ Stop-Loss</div>
+                <div style={{ fontSize: '1.8em', color: 'var(--down-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.stopLoss?.toLocaleString()} F</div>
+                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Sécurité (-1.5x ATR)</div>
+              </div>
             </div>
-            <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🚀 Objectif (Sortie)</div>
-              <div style={{ fontSize: '1.8em', color: 'var(--accent-blue)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.exit?.toLocaleString()} F</div>
-              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Take Profit</div>
-            </div>
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🛡️ Stop-Loss</div>
-              <div style={{ fontSize: '1.8em', color: 'var(--down-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.stopLoss?.toLocaleString()} F</div>
-              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Coupe-circuit risque</div>
+            
+            <div style={{ textAlign: 'center', borderTop: '1px dashed var(--border-color)', paddingTop: '10px', fontSize: '0.9em' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Ratio Gain / Risque : </span>
+              <strong style={{ color: ((selectedStock.exit - selectedStock.entry) / (selectedStock.entry - selectedStock.stopLoss)) >= 2 ? 'var(--up-color)' : 'var(--warn-color)' }}>
+                1 : {((selectedStock.exit - selectedStock.entry) / (selectedStock.entry - selectedStock.stopLoss)).toFixed(1)}
+              </strong>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.85em', marginLeft: '10px' }}>(Volatilité journalière estimée : {selectedStock.volatility} F)</span>
             </div>
           </div>
 
-          {/* ANCIEN BLOC : KPIS FONDAMENTAUX */}
+          {/* RECONDUCTION DES ANALYSES FONDAMENTALES */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '20px' }}>
             <div style={{ background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', borderLeft: `4px solid var(--accent-blue)` }}>
               <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px', fontWeight: 'bold' }}>Revenu Passif</div>
@@ -493,6 +500,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* ZONE DE GRAPHIQUES HISTORIQUES */}
           <div style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', minHeight: '350px' }}>
             {loadingHistory ? <div style={{ textAlign: 'center', marginTop: '100px', color: 'var(--text-muted)' }}>Chargement...</div> : (
               <ResponsiveContainer width="100%" height="100%">
@@ -513,7 +521,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ROUTES */}
+      {/* SYSTÈME DE ROUTAGE DE L'APPLICATION */}
       <Routes>
         <Route path="/" element={<Landing user={user} toggleTheme={toggleTheme} isDarkMode={isDarkMode} setIsSignUp={setIsSignUp} setShowAuthModal={setShowAuthModal} />} />
         
