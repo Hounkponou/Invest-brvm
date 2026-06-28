@@ -17,6 +17,43 @@ import Screener from './pages/Screener';
 import Simulator from './pages/Simulator';
 import Portfolio from './pages/Portfolio';
 
+// ==========================================
+// ALGORITHME QUANT : SIGNAUX DE TRADING
+// ==========================================
+const calculateTradingPoints = (stock) => {
+  const currentPrice = stock.close || 0;
+  const sma = stock.sma_20 || currentPrice;
+  const rsi = stock.rsi_14 || 50;
+
+  // 1. POINT D'ENTRÉE
+  let entry = currentPrice;
+  if (rsi > 65) {
+    entry = currentPrice * 0.95; // RSI très haut : on attend une correction de 5%
+  } else if (currentPrice > sma) {
+    entry = sma; // Tendance haussière : on achète sur le repli de la moyenne mobile
+  } else {
+    entry = currentPrice * 0.98; // Tendance baissière ou neutre : on cherche un léger discount
+  }
+
+  // 2. POINT DE SORTIE (Take Profit)
+  let exit = currentPrice * 1.08; // Base : Objectif +8%
+  if (rsi < 35) {
+    exit = currentPrice * 1.10; // Action survendue : potentiel de rebond plus fort (+10%)
+  } else if (currentPrice < sma) {
+    exit = sma; // Si le prix est sous la SMA, la moyenne devient la première résistance (sortie)
+  }
+
+  // 3. STOP-LOSS (Gestion du risque)
+  // On coupe si le prix chute de 5% en dessous de notre point d'entrée ciblé
+  let stopLoss = entry * 0.95;
+
+  return {
+    entry: Math.round(entry),
+    exit: Math.round(exit),
+    stopLoss: Math.round(stopLoss)
+  };
+};
+
 export default function App() {
   // ==========================================
   // 1. ÉTATS GLOBAUX
@@ -89,8 +126,15 @@ export default function App() {
         const { data: dateData } = await supabase.from('full_stock_pro').select('date').order('date', { ascending: false }).limit(1);
         if (dateData[0]?.date) {
           const { data } = await supabase.from('full_stock_pro').select('*').eq('date', dateData[0].date);
-          console.log("Données chargées dans App.jsx :", data);
-          setMarketData(data || []);
+          
+          // Enrichissement des données avec les points de trading IA
+          const enrichedData = data ? data.map(stock => {
+            const tradingPoints = calculateTradingPoints(stock);
+            return { ...stock, ...tradingPoints }; 
+          }) : [];
+
+          console.log("Données enrichies chargées dans App.jsx :", enrichedData);
+          setMarketData(enrichedData);
         }
       } catch (err) { console.error(err); } 
       finally { setLoadingMarket(false); }
@@ -269,19 +313,13 @@ export default function App() {
     (globalSector === 'All' || getSector(i.symbole) === globalSector)
   ), [marketData, searchQuery, globalSector]);
 
-const marketStats = useMemo(() => {
+  const marketStats = useMemo(() => {
     if (globallyFilteredMarket.length === 0) return null;
     
     const advances = globallyFilteredMarket.filter(m => m.variation > 0).length;
     const declines = globallyFilteredMarket.filter(m => m.variation < 0).length;
-    
-    // 1. On trie toutes les actions de la plus forte hausse à la plus forte baisse
     const sortedMarket = [...globallyFilteredMarket].sort((a, b) => b.variation - a.variation);
-
-    // 2. On filtre strictement les positives pour le TOP
     const top3 = sortedMarket.filter(m => m.variation > 0).slice(0, 3);
-    
-    // 3. On filtre strictement les négatives pour le FLOP (et on inverse pour avoir la pire en premier)
     const flop3 = sortedMarket.filter(m => m.variation < 0).reverse().slice(0, 3);
 
     return {
@@ -402,7 +440,7 @@ const marketStats = useMemo(() => {
 
       {/* MODALE DE GRAPHIQUE HISTORIQUE */}
       {selectedStock && (
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--bg-base)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '30px 40px', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--bg-base)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '30px 40px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h2 style={{ margin: 0, fontSize: '2.5em', color: 'var(--text-main)' }}>{selectedStock.nom}</h2>
@@ -420,6 +458,26 @@ const marketStats = useMemo(() => {
             </div>
           </div>
 
+          {/* NOUVEAU BLOC : SIGNAUX DE TRADING IA */}
+          <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', border: '1px solid var(--accent-blue)' }}>
+            <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🎯 Entrée Optimale</div>
+              <div style={{ fontSize: '1.8em', color: 'var(--up-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.entry?.toLocaleString()} F</div>
+              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Prix d'achat conseillé</div>
+            </div>
+            <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🚀 Objectif (Sortie)</div>
+              <div style={{ fontSize: '1.8em', color: 'var(--accent-blue)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.exit?.toLocaleString()} F</div>
+              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Take Profit</div>
+            </div>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🛡️ Stop-Loss</div>
+              <div style={{ fontSize: '1.8em', color: 'var(--down-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.stopLoss?.toLocaleString()} F</div>
+              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Coupe-circuit risque</div>
+            </div>
+          </div>
+
+          {/* ANCIEN BLOC : KPIS FONDAMENTAUX */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '20px' }}>
             <div style={{ background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', borderLeft: `4px solid var(--accent-blue)` }}>
               <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px', fontWeight: 'bold' }}>Revenu Passif</div>
