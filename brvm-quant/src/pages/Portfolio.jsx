@@ -63,7 +63,12 @@ export default function Portfolio() {
                   {portfolioAnalytics.totalValue.toLocaleString()} F
                 </div>
                 <div style={{ fontSize: '0.9em', color: (portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested) >= 0 ? 'var(--up-color)' : 'var(--down-color)', marginTop: '5px' }}>
-                  P/L : {(portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested) >= 0 ? '+' : ''}{(portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested).toLocaleString()} F
+                                  P/L : {(portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested) >= 0 ? '+' : ''}{(portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested).toLocaleString()} F 
+                                  {' '}
+                  <span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>
+                    ({((portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested) / portfolioAnalytics.totalInvested >= 0 ? '+' : '')}
+                    {(((portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested) / portfolioAnalytics.totalInvested) * 100).toFixed(2)}%)
+                  </span>
                 </div>
               </div>
               <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', borderLeft: `4px solid ${portfolioAnalytics.riskStatus.color}` }}>
@@ -73,6 +78,7 @@ export default function Portfolio() {
                 </div>
               </div>
             </div>
+
             
             <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'row', gap: '10px' }}>
               <div style={{ flex: 1, height: '220px', minWidth: '150px' }}>
