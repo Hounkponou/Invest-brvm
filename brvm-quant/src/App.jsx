@@ -449,6 +449,9 @@ export default function App() {
                 <option value="30">Zoom 1 Mois</option>
                 <option value="180">Zoom 6 Mois</option>
                 <option value="365">Zoom 1 An</option>
+                <option value="730">Zoom 2 Ans</option>
+                <option value="1095">Zoom 3 Ans</option>
+                <option value="1825">Zoom 5 Ans</option>
                 <option value="ALL">Historique Complet</option>
               </select>
               <button style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-panel)', color: 'var(--text-main)', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { setSelectedStock(null); setStockHistory([]); }}>Fermer ✕</button>
