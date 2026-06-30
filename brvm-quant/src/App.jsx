@@ -100,6 +100,9 @@ export default function App() {
   const [sellQuantity, setSellQuantity] = useState('');
   const [isSelling, setIsSelling] = useState(false);
 
+  const [filterMinPrice, setFilterMinPrice] = useState('');
+  const [filterMaxPrice, setFilterMaxPrice] = useState('');
+
   // ==========================================
   // 2. EFFETS (Session & Synchronisation base)
   // ==========================================
@@ -331,15 +334,29 @@ export default function App() {
   }, [globallyFilteredMarket]);
 
   const screenerData = useMemo(() => {
-    let result = globallyFilteredMarket.filter(i => (filterVal === 'All' || i.statut_valorisation.includes(filterVal)) && (filterRsi === 'All' || i.statut_rsi.includes(filterRsi)));
-    if (screenerSort === 'score') result.sort((a, b) => b.score_ia - a.score_ia);
-    if (screenerSort === 'var_up') result.sort((a, b) => b.variation - a.variation);
-    if (screenerSort === 'var_down') result.sort((a, b) => a.variation - b.variation);
-    if (screenerSort === 'rsi_asc') result.sort((a, b) => (a.rsi_14 || 100) - (b.rsi_14 || 100)); 
-    if (screenerSort === 'per_asc') result.sort((a, b) => ((a.per <= 0 ? 999 : a.per) - (b.per <= 0 ? 999 : b.per)));
-    if (screenerSort === 'yield_desc') result.sort((a, b) => (b.rendement_dividende || 0) - (a.rendement_dividende || 0));
-    return result;
-  }, [globallyFilteredMarket, filterVal, filterRsi, screenerSort]);
+      let result = globallyFilteredMarket.filter(i => {
+        // Vérification Valorisation & RSI
+        const passVal = filterVal === 'All' || i.statut_valorisation.includes(filterVal);
+        const passRsi = filterRsi === 'All' || i.statut_rsi.includes(filterRsi);
+        
+        // Vérification du Prix (Intervalle libre)
+        const currentPrice = i.close || 0;
+        const minPrice = filterMinPrice !== '' ? Number(filterMinPrice) : 0;
+        const maxPrice = filterMaxPrice !== '' ? Number(filterMaxPrice) : Infinity;
+        const passPrice = currentPrice >= minPrice && currentPrice <= maxPrice;
+
+        return passVal && passRsi && passPrice;
+      });
+
+      if (screenerSort === 'score') result.sort((a, b) => b.score_ia - a.score_ia);
+      if (screenerSort === 'var_up') result.sort((a, b) => b.variation - a.variation);
+      if (screenerSort === 'var_down') result.sort((a, b) => a.variation - b.variation);
+      if (screenerSort === 'rsi_asc') result.sort((a, b) => (a.rsi_14 || 100) - (b.rsi_14 || 100)); 
+      if (screenerSort === 'per_asc') result.sort((a, b) => ((a.per <= 0 ? 999 : a.per) - (b.per <= 0 ? 999 : b.per)));
+      if (screenerSort === 'yield_desc') result.sort((a, b) => (b.rendement_dividende || 0) - (a.rendement_dividende || 0));
+      
+      return result;
+    }, [globallyFilteredMarket, filterVal, filterRsi, filterMinPrice, filterMaxPrice, screenerSort]);
 
   const groupedPortfolio = useMemo(() => {
     if (!savedPortfolio || savedPortfolio.length === 0) return [];
@@ -556,6 +573,10 @@ export default function App() {
             setManualShares={setManualShares} manualPrice={manualPrice}
             setManualPrice={setManualPrice} groupedPortfolio={groupedPortfolio}
             portfolioAnalytics={portfolioAnalytics} openSellModal={openSellModal}
+
+            filterMinPrice={filterMinPrice} setFilterMinPrice={setFilterMinPrice}
+            filterMaxPrice={filterMaxPrice} setFilterMaxPrice={setFilterMaxPrice}
+            screenerData={screenerData}
           />
         }>
           <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />

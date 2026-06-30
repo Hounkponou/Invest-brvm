@@ -7,8 +7,10 @@ export default function Screener() {
     screenerSort, setScreenerSort, 
     filterVal, setFilterVal, 
     filterRsi, setFilterRsi, 
+    filterMinPrice, setFilterMinPrice, 
+    filterMaxPrice, setFilterMaxPrice,
     screenerData, 
-    setSelectedStock 
+    setSelectedStock
   } = useOutletContext();
 
   return (
@@ -29,8 +31,11 @@ export default function Screener() {
         </select>
       </div>
       
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '30px', background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+      {/* ZONE DES FILTRES AVANCÉS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px', background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+        
+        {/* Filtre Valorisation */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <label style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>Valorisation</label>
           <select 
             style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)' }} 
@@ -42,7 +47,9 @@ export default function Screener() {
             <option value="Suréval">Surévaluées</option>
           </select>
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+
+        {/* Filtre Momentum RSI */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <label style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>Momentum</label>
           <select 
             style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)' }} 
@@ -54,12 +61,42 @@ export default function Screener() {
             <option value="Suracheté">Surachetées (&gt; 70)</option>
           </select>
         </div>
+
+        {/* NOUVEAU : Filtre Intervalle de Prix */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <label style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>Prix (FCFA)</label>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input 
+              type="number" 
+              placeholder="Min" 
+              min="0"
+              value={filterMinPrice}
+              onChange={e => setFilterMinPrice(e.target.value)}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)' }} 
+            />
+            <input 
+              type="number" 
+              placeholder="Max" 
+              min="0"
+              value={filterMaxPrice}
+              onChange={e => setFilterMaxPrice(e.target.value)}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)' }} 
+            />
+          </div>
+        </div>
+
       </div>
       
+      {/* RÉSULTATS DU SCREENER */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
         {screenerData.map(item => (
           <StockCard key={item.symbole} item={item} onClick={setSelectedStock} />
         ))}
+        {screenerData.length === 0 && (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'var(--bg-panel)', borderRadius: '8px' }}>
+            Aucune action ne correspond à ces critères.
+          </div>
+        )}
       </div>
     </div>
   );
