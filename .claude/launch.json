@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "brvm-quant-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5210", "--strictPort"],
+      "port": 5210,
+      "autoPort": false,
+      "cwd": "brvm-quant"
+    }
+  ]
+}

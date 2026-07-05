@@ -1,5 +1,13 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { FilterSelect, FilterInput } from '../components/filters';
+
+// Stratégies de simulation
+const STRATEGY_OPTIONS = [
+  { value: 'rente', label: 'Revenus & Dividendes' },
+  { value: 'value', label: 'Value Investing' },
+  { value: 'momentum', label: 'Momentum' },
+];
 
 export default function Simulator() {
   const { 
@@ -15,31 +23,26 @@ export default function Simulator() {
         🧪 Backtest Lab & Strategies
       </h2>
       
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end', background: 'var(--bg-panel)', padding: '30px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '30px' }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>Capital (FCFA)</label>
-          <input 
-            style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)' }} 
-            type="number" 
-            value={simCapital} 
-            onChange={e => setSimCapital(Number(e.target.value))} 
-            disabled={loadingSim} 
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end', background: 'var(--bg-panel)', padding: '30px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '30px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: '180px' }}>
+          <FilterInput
+            label="Capital (FCFA)"
+            type="number"
+            value={simCapital}
+            onChange={(v) => setSimCapital(Number(v))}
+            disabled={loadingSim}
           />
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>Méthode</label>
-          <select 
-            style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)' }} 
-            value={simStrategy} 
-            onChange={e => setSimStrategy(e.target.value)} 
+        <div style={{ flex: 1, minWidth: '180px' }}>
+          <FilterSelect
+            label="Méthode"
+            value={simStrategy}
+            onChange={setSimStrategy}
+            options={STRATEGY_OPTIONS}
             disabled={loadingSim}
-          >
-            <option value="rente">Revenus & Dividendes</option>
-            <option value="value">Value Investing</option>
-            <option value="momentum">Momentum</option>
-          </select>
+          />
         </div>
-        <button 
+        <button
           style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: '#9f7aea', color: 'white', fontWeight: 'bold', cursor: 'pointer', height: '42px' }} 
           onClick={runSimulationAndBacktest} 
           disabled={loadingSim}

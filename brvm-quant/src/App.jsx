@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './utils/supabase';
 import { getSector } from './utils/brvmConfig';
 import { getValColor, getRsiColor } from './utils/uiHelpers';
+import useTheme from './hooks/useTheme'; // Source de vérité UNIQUE du thème (Dark/Solar)
 import { ComposedChart, Area, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 // Composants de Layout et Modales
@@ -16,6 +17,7 @@ import Dashboard from './pages/Dashboard';
 import Screener from './pages/Screener';
 import Simulator from './pages/Simulator';
 import Portfolio from './pages/Portfolio';
+import Predictions from './pages/Predictions'; // Nouveau Module Prédictif (autonome, thème Dark/Solar)
 
 // ==========================================
 // ALGORITHME QUANT PRO : ATR & VOLATILITÉ
@@ -62,7 +64,16 @@ export default function App() {
   // ==========================================
   const [sessionLoading, setSessionLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  // ── THÈME UNIFIÉ ────────────────────────────────────────────────────────
+  // Un SEUL hook pilote désormais tout l'app (anciennes pages + Module
+  // Prédictif). Il écrit data-theme="dark|solar" sur <html> ; toutes les
+  // variables CSS (--bg-base, --ipx-*, utilitaires Tailwind) en découlent.
+  // On expose isDarkMode/toggleTheme pour rester compatible avec les
+  // composants existants (TopHeader, Landing) qui attendent ces props.
+  const { isDark, toggleTheme } = useTheme();
+  const isDarkMode = isDark;
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -107,9 +118,7 @@ export default function App() {
   // 2. EFFETS (Session & Synchronisation base)
   // ==========================================
   useEffect(() => {
-    const savedTheme = localStorage.getItem('brvm_theme');
-    if (savedTheme === 'light') setIsDarkMode(false);
-
+    // Le thème est géré par le hook useTheme (data-theme + localStorage 'ipx_theme').
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
       setSessionLoading(false);
@@ -176,11 +185,7 @@ export default function App() {
   // ==========================================
   // 3. FONCTIONS UTILITAIRES & ACTIONS
   // ==========================================
-  const toggleTheme = () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    localStorage.setItem('brvm_theme', newTheme ? 'dark' : 'light');
-  };
+  // toggleTheme provient désormais du hook useTheme (bascule dark ⇄ solar).
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -411,28 +416,15 @@ export default function App() {
   }, [groupedPortfolio, marketData]);
 
   // ==========================================
-  // 5. CSS STYLING VARIABLES ET RENDU
+  // 5. RENDU
   // ==========================================
-  const themeCSS = isDarkMode ? `
-    :root {
-      --bg-base: #0b0e14; --bg-panel: #151a23; --text-main: #ffffff; --text-muted: #8b98a5;
-      --border-color: #2a2e39; --up-color: #089981; --down-color: #f23645;
-      --warn-color: #ffb300; --accent-blue: #2962ff;
-    }
-  ` : `
-    :root {
-      --bg-base: #f1f5f9; --bg-panel: #ffffff; --text-main: #0f172a; --text-muted: #64748b;
-      --border-color: #e2e8f0; --up-color: #10b981; --down-color: #ef4444;
-      --warn-color: #f59e0b; --accent-blue: #3b82f6;
-    }
-  `;
+  // Plus de <style> injecté ici : toute la palette (Dark/Solar) vient de
+  // styles/theme.css via l'attribut data-theme piloté par le hook useTheme.
 
-  if (sessionLoading) return <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#0b0e14', color: 'white'}}>Securing connection...</div>;
+  if (sessionLoading) return <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'var(--bg-base)', color: 'var(--text-main)'}}>Securing connection...</div>;
 
   return (
     <BrowserRouter>
-      <style>{themeCSS}</style>
-
       {/* MODALES GLOBALES */}
       {showAuthModal && (
         <AuthModal 
@@ -544,7 +536,7 @@ export default function App() {
       {/* SYSTÈME DE ROUTAGE DE L'APPLICATION */}
       <Routes>
         <Route path="/" element={<Landing user={user} toggleTheme={toggleTheme} isDarkMode={isDarkMode} setIsSignUp={setIsSignUp} setShowAuthModal={setShowAuthModal} />} />
-        
+
         <Route element={
           <Layout 
             isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}
@@ -581,6 +573,8 @@ export default function App() {
         }>
           <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
           <Route path="/screener" element={user ? <Screener /> : <Navigate to="/" />} />
+          {/* Module Prédictif : désormais dans le Layout → même sidebar, même header, même thème */}
+          <Route path="/predictions" element={user ? <Predictions /> : <Navigate to="/" />} />
           <Route path="/simulator" element={user ? <Simulator /> : <Navigate to="/" />} />
           <Route path="/portfolio" element={user ? <Portfolio /> : <Navigate to="/" />} />
         </Route>

@@ -8,6 +8,9 @@ on:
 jobs:
   train:
     runs-on: ubuntu-latest
+    # Autorise le GITHUB_TOKEN à pousser le modèle réentraîné (sinon git push est refusé)
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: ./brvm-prediction
@@ -24,10 +27,12 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python main.py --task train
 
-      - name: Sauvegarder le nouveau modèle sur GitHub
+      - name: Sauvegarder les nouveaux artefacts sur GitHub
         run: |
           git config --global user.name 'GitHub Action Bot'
           git config --global user.email 'action@github.com'
-          git add models/best_xgb_model.json
+          # TOUT le dossier models/ : modèle + calibrateur + feature_cols + rapport,
+          # sinon predict utiliserait un nouveau modèle avec un ancien calibrateur.
+          git add models/
           git commit -m "Automated model retraining update" || echo "No changes to commit"
           git push
