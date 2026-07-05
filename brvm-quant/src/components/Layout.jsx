@@ -8,11 +8,18 @@ export default function Layout(props) {
   return (
     <div className="app-container" style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-base)', color: 'var(--text-main)', overflow: 'hidden' }}>
       
-      <Sidebar 
-        isSidebarOpen={props.isSidebarOpen} 
-        user={props.user} 
-        handleLogout={props.handleLogout} 
+      <Sidebar
+        isSidebarOpen={props.isSidebarOpen}
+        setIsSidebarOpen={props.setIsSidebarOpen}
+        user={props.user}
+        handleLogout={props.handleLogout}
       />
+
+      {/* Fond assombri : n'apparaît que sur mobile quand le tiroir est ouvert.
+          Un clic dessus referme le menu. (Masqué via CSS sur desktop.) */}
+      {props.isSidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => props.setIsSidebarOpen(false)} />
+      )}
 
       <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <TopHeader 

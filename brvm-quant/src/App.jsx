@@ -74,7 +74,10 @@ export default function App() {
   const { isDark, toggleTheme } = useTheme();
   const isDarkMode = isDark;
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Menu ouvert par défaut sur desktop, FERMÉ sur mobile (le tiroir couvrirait le contenu).
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    () => typeof window === 'undefined' || window.innerWidth > 768
+  );
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -446,8 +449,8 @@ export default function App() {
 
       {/* MODALE DE GRAPHIQUE HISTORIQUE & STRATÉGIE IA */}
       {selectedStock && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--bg-base)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '30px 40px', overflowY: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div className="stock-detail" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--bg-base)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '30px 40px', overflowY: 'auto' }}>
+          <div className="stock-detail-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h2 style={{ margin: 0, fontSize: '2.5em', color: 'var(--text-main)' }}>{selectedStock.nom}</h2>
               <span style={{ color: 'var(--text-muted)', fontSize: '1.2em', marginRight: '15px' }}>{selectedStock.symbole} • {getSector(selectedStock.symbole)}</span>
@@ -469,7 +472,7 @@ export default function App() {
 
           {/* CRÉATION DU BLOC QUANT : SIGNAUX DE TRADING IA (ATR DYNAMIQUE) */}
           <div style={{ marginBottom: '20px', background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', border: '1px solid var(--accent-blue)' }}>
-            <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+            <div className="stock-detail-trading" style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
               <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🎯 Entrée Optimale</div>
                 <div style={{ fontSize: '1.8em', color: 'var(--up-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.entry?.toLocaleString()} F</div>
