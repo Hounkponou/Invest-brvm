@@ -130,29 +130,69 @@ tr:hover { background-color: var(--border-color); }
 
 .loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent-blue); font-weight: bold; font-size: 1.2em; }
 
-/* Responsive : Mobile et tablettes */
+/* =========================================================================
+   NAVIGATION : sidebar persistante (desktop) -> tiroir coulissant (mobile)
+   ========================================================================= */
+/* Desktop : la sidebar se replie via la classe .is-closed (bouton ☰). */
+.sidebar.is-closed { display: none; }
+
+/* Fond assombri du tiroir : invisible sur desktop, affiché sur mobile. */
+.sidebar-backdrop { display: none; }
+
+/* =========================================================================
+   RESPONSIVE : Mobile et tablettes
+   ========================================================================= */
 @media (max-width: 768px) {
-  .app-container {
-    flex-direction: column;
-  }
-  
+  .app-container { flex-direction: column; }
+
+  /* --- Sidebar en TIROIR coulissant (overlay) --------------------------- */
+  /* On la garde dans le flux (display:flex) et on la fait GLISSER hors écran
+     via translateX, plutôt que de la masquer : le bouton ☰ fonctionne enfin. */
   .sidebar {
-    display: none !important; /* Masque la barre latérale sur mobile */
+    position: fixed !important;
+    top: 0; left: 0; bottom: 0;
+    width: 82% !important;
+    max-width: 300px;
+    z-index: 200 !important;
+    display: flex !important;
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
   }
+  .sidebar.is-open  { transform: translateX(0); box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5); }
+  .sidebar.is-closed { transform: translateX(-100%); }
 
-  .main-content {
-    width: 100%;
-  }
-
-  /* Rendre les tableaux scrollables horizontalement */
-  table {
+  /* Fond cliquable qui referme le tiroir */
+  .sidebar-backdrop {
     display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 150;
   }
-  
-  /* Ajuster les cartes */
-  .stock-card {
-    width: 100% !important;
-  }
+
+  .main-content { width: 100%; }
+
+  /* --- En-tête compact, champs de filtre flexibles ---------------------- */
+  .top-header { padding: 12px 15px !important; gap: 8px; }
+  .top-header > div { min-width: 0; }
+  .top-header > div:first-child { flex: 1; }
+  .top-header .filter-field { flex: 1; min-width: 0; }
+  .top-header input.filter-control,
+  .top-header select.filter-control { width: 100% !important; min-width: 0; }
+
+  /* --- Plus de place pour le contenu ------------------------------------ */
+  .view-area { padding: 16px !important; }
+
+  /* Tableaux scrollables horizontalement */
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+
+  /* Cartes pleine largeur */
+  .stock-card { width: 100% !important; }
+
+  /* --- Modale de détail d'action ---------------------------------------- */
+  .stock-detail { padding: 16px !important; }
+  .stock-detail h2 { font-size: 1.6em !important; }
+  .stock-detail-head { flex-wrap: wrap; gap: 12px; }
+  .stock-detail-trading { flex-wrap: wrap; }
+  .stock-detail-trading > div { flex: 1 1 45% !important; border-right: none !important; }
 }
