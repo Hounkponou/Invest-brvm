@@ -44,6 +44,12 @@ export default function Sidebar({
         <Link to="/screener" className={`nav-btn ${location.pathname === '/screener' ? 'active' : ''}`} style={{ width: '100%', textAlign: 'left', padding: '12px 15px', borderRadius: '8px', background: location.pathname === '/screener' ? 'var(--accent-blue)' : 'transparent', color: location.pathname === '/screener' ? 'white' : 'var(--text-muted)', border: 'none', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', transition: '0.2s' }}>
           Stock Screener
         </Link>
+        {/* Accès au nouveau Module Prédictif IA (accent vert = signaux) */}
+        <Link to="/predictions" className={`nav-btn ${location.pathname === '/predictions' ? 'active' : ''}`} style={{ width: '100%', textAlign: 'left', padding: '12px 15px', borderRadius: '8px', background: location.pathname === '/predictions' ? 'var(--up-color)' : 'transparent', color: location.pathname === '/predictions' ? 'white' : 'var(--up-color)', border: location.pathname === '/predictions' ? 'none' : '1px solid var(--up-color)', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', transition: '0.2s' }}>
+          {/* Icône éclair = signaux temps réel */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Signaux IA
+        </Link>
         <Link to="/simulator" className={`nav-btn ${location.pathname === '/simulator' ? 'active' : ''}`} style={{ width: '100%', textAlign: 'left', padding: '12px 15px', borderRadius: '8px', background: location.pathname === '/simulator' ? '#9f7aea' : 'transparent', color: location.pathname === '/simulator' ? 'white' : '#9f7aea', border: location.pathname === '/simulator' ? 'none' : '1px solid #9f7aea', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', transition: '0.2s' }}>
           Backtest Lab
         </Link>

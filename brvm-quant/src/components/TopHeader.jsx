@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { UNIQUE_SECTORS } from '../utils/brvmConfig';
+import { FilterSelect, FilterInput } from './filters';
 
 export default function TopHeader({
   isSidebarOpen,
@@ -12,25 +13,25 @@ export default function TopHeader({
   isDarkMode,
   toggleTheme
 }) {
+  // Options secteur (le "Tous" en tête) — mémoïsées
+  const sectorOptions = useMemo(
+    () => [{ value: 'All', label: '🌍 Tous les secteurs' }, ...UNIQUE_SECTORS.map((s) => ({ value: s, label: s }))],
+    []
+  );
+
   return (
     <header className="top-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 30px', backgroundColor: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', position: 'sticky', top: 0, zIndex: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', fontSize: '1.5em', cursor: 'pointer' }}>☰</button>
-        <input 
-          type="text" 
-          placeholder="Rechercher (Ex: SGBC)..." 
-          value={searchQuery} 
-          onChange={(e) => setSearchQuery(e.target.value)} 
-          style={{ padding: '10px 15px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)', width: '250px' }} 
+        {/* Recherche & secteur : mêmes composants de filtre que les pages */}
+        <FilterInput
+          type="text"
+          placeholder="Rechercher (Ex: SGBC)..."
+          value={searchQuery}
+          onChange={setSearchQuery}
+          style={{ width: '250px' }}
         />
-        <select 
-          value={globalSector} 
-          onChange={(e) => setGlobalSector(e.target.value)} 
-          style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          <option value="All">🌍 Tous les secteurs</option>
-          {UNIQUE_SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
+        <FilterSelect value={globalSector} onChange={setGlobalSector} options={sectorOptions} />
       </div>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

@@ -1,0 +1,135 @@
+/* =========================================================================
+   theme.css — Système de thème « Dark & Solar » pour le Module Prédictif
+   =========================================================================
+   Stratégie demandée : variables CSS globales + utilitaires Tailwind v4.
+
+   - On active Tailwind (jusqu'ici il était installé mais jamais importé).
+   - On définit un jeu de TOKENS dédiés préfixés --ipx-* (Invest Pro X) pour
+     ÉVITER TOUTE COLLISION avec les variables --bg-base/--text-main déjà
+     injectées par App.jsx. Le module est ainsi 100 % autonome.
+   - Le basculement se fait via l'attribut data-theme sur <html> :
+        <html data-theme="dark">  ou  <html data-theme="solar">
+     Changer cet attribut met à jour toutes les couleurs INSTANTANÉMENT,
+     sans re-render React (simple cascade CSS).
+   - @theme inline mappe ces tokens sur des utilitaires Tailwind :
+        bg-bg, bg-surface, text-fg, text-muted, border-border,
+        text-up, text-down, text-warn, bg-accent ...
+   ========================================================================= */
+
+@import "tailwindcss";
+
+/* --- Mapping tokens -> utilitaires Tailwind (générés à la compilation) --- */
+@theme inline {
+  --color-bg: var(--ipx-bg);
+  --color-surface: var(--ipx-surface);
+  --color-surface2: var(--ipx-surface-2);
+  --color-border: var(--ipx-border);
+  --color-fg: var(--ipx-fg);
+  --color-muted: var(--ipx-muted);
+  --color-accent: var(--ipx-accent);
+  --color-up: var(--ipx-up);
+  --color-down: var(--ipx-down);
+  --color-warn: var(--ipx-warn);
+
+  --radius-card: 1rem;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* =========================================================================
+   THÈME SOMBRE (défaut) — palette « terminal pro » façon TradingView
+   ========================================================================= */
+:root,
+[data-theme="dark"] {
+  --ipx-bg:        #0B0E14;
+  --ipx-surface:   #151A23;
+  --ipx-surface-2: #1E2433;
+  --ipx-border:    #2A2E39;
+  --ipx-fg:        #FFFFFF;
+  --ipx-muted:     #8B98A5;
+  --ipx-accent:    #2962FF;
+  --ipx-up:        #089981;
+  --ipx-down:      #F23645;
+  --ipx-warn:      #FFB300;
+
+  /* Variantes translucides pour les fonds de badges / jauges */
+  --ipx-up-soft:     rgba(8, 153, 129, 0.15);
+  --ipx-down-soft:   rgba(242, 54, 69, 0.15);
+  --ipx-warn-soft:   rgba(255, 179, 0, 0.15);
+  --ipx-accent-soft: rgba(41, 98, 255, 0.15);
+
+  /* --- ALIAS HÉRITÉS -----------------------------------------------------
+     Les anciennes pages (Dashboard, Screener, Portfolio, Simulator) et
+     index.css utilisent ces noms de variables « legacy ». On les fait
+     désormais POINTER sur les tokens --ipx-* : plus aucune palette en dur,
+     une seule source de vérité, et tout l'app hérite du basculement Solar. */
+  --bg-base:           var(--ipx-bg);
+  --bg-panel:          var(--ipx-surface);
+  --bg-hover:          var(--ipx-surface-2);
+  --border-color:      var(--ipx-border);
+  --text-main:         var(--ipx-fg);
+  --text-muted:        var(--ipx-muted);
+  --accent-blue:       var(--ipx-accent);
+  --accent-blue-hover: #1E53E5;
+  --accent-blue-soft:  var(--ipx-accent-soft);
+  --up-color:          var(--ipx-up);
+  --up-bg:             var(--ipx-up-soft);
+  --down-color:        var(--ipx-down);
+  --down-bg:           var(--ipx-down-soft);
+  --warn-color:        var(--ipx-warn);
+  --warn-bg:           var(--ipx-warn-soft);
+
+  color-scheme: dark;
+}
+
+/* =========================================================================
+   THÈME SOLAIRE (clair) — palette chaude, lumineuse, inspirant confiance
+   ========================================================================= */
+[data-theme="solar"] {
+  --ipx-bg:        #FBF7EF;  /* blanc cassé chaud */
+  --ipx-surface:   #FFFFFF;
+  --ipx-surface-2: #F4ECDD;  /* léger sable */
+  --ipx-border:    #E7DCC8;
+  --ipx-fg:        #1A1D29;
+  --ipx-muted:     #6B7280;
+  --ipx-accent:    #2563EB;
+  --ipx-up:        #0E9F6E;
+  --ipx-down:      #E02424;
+  --ipx-warn:      #D97706;
+
+  --ipx-up-soft:     rgba(14, 159, 110, 0.12);
+  --ipx-down-soft:   rgba(224, 36, 36, 0.10);
+  --ipx-warn-soft:   rgba(217, 119, 6, 0.12);
+  --ipx-accent-soft: rgba(37, 99, 235, 0.10);
+
+  /* --- ALIAS HÉRITÉS (mode Solar) --------------------------------------- */
+  --bg-base:           var(--ipx-bg);
+  --bg-panel:          var(--ipx-surface);
+  --bg-hover:          var(--ipx-surface-2);
+  --border-color:      var(--ipx-border);
+  --text-main:         var(--ipx-fg);
+  --text-muted:        var(--ipx-muted);
+  --accent-blue:       var(--ipx-accent);
+  --accent-blue-hover: #1D4ED8;
+  --accent-blue-soft:  var(--ipx-accent-soft);
+  --up-color:          var(--ipx-up);
+  --up-bg:             var(--ipx-up-soft);
+  --down-color:        var(--ipx-down);
+  --down-bg:           var(--ipx-down-soft);
+  --warn-color:        var(--ipx-warn);
+  --warn-bg:           var(--ipx-warn-soft);
+
+  color-scheme: light;
+}
+
+/* --- Transition douce lors du basculement de thème ---------------------- */
+[data-theme] {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+/* --- Classe racine du module (fond plein hauteur) ---------------------- */
+.ipx-root {
+  background-color: var(--ipx-bg);
+  color: var(--ipx-fg);
+  font-family: var(--font-sans);
+  min-height: 100%;
+}

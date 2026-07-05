@@ -17,3 +17,10 @@ supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Paramètres globaux du modèle
 HORIZON_JOURS = 15
 TARGET_RETURN = 0.035
+
+# Dossier des modèles ANCRÉ au projet (chemin absolu) : peu importe le répertoire
+# depuis lequel on lance `python main.py`, les artefacts (modèle, calibrateur,
+# feature_cols, rapport) sont TOUJOURS lus/écrits dans brvm-prediction/models/.
+# Évite le bug du dossier "models" créé hors du projet selon le cwd.
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # -> brvm-prediction/
+MODELS_DIR = os.path.join(BASE_DIR, "models")

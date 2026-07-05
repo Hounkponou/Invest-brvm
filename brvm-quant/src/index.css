@@ -1,20 +1,8 @@
-:root {
-  /* Palette TradingView / Terminal Pro */
-  --bg-base: #0B0E14; 
-  --bg-panel: #151924;
-  --bg-hover: #1E2433;
-  --border-color: #2A2E39;
-  --text-main: #D1D4DC;
-  --text-muted: #8B98A5;
-  --accent-blue: #2962FF;
-  --accent-blue-hover: #1E53E5;
-  --up-color: #089981;
-  --up-bg: rgba(8, 153, 129, 0.15);
-  --down-color: #F23645;
-  --down-bg: rgba(242, 54, 69, 0.15);
-  --warn-color: #FFB300;
-  --warn-bg: rgba(255, 179, 0, 0.15);
-}
+/* NOTE : la palette (variables --bg-base, --text-main, --accent-blue, …) est
+   désormais définie UNE SEULE FOIS dans styles/theme.css, où elle est aliasée
+   sur les tokens --ipx-* et pilotée par l'attribut data-theme (Dark/Solar).
+   On ne redéfinit donc plus aucune couleur en dur ici, pour éviter d'écraser
+   le basculement de thème. */
 
 * { box-sizing: border-box; }
 body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-base); color: var(--text-main); overflow: hidden; }
@@ -24,11 +12,11 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 
 /* SIDEBAR */
 .sidebar { width: 250px; background-color: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px 0; z-index: 10; }
-.sidebar-brand { font-size: 1.5em; font-weight: 900; color: white; padding: 0 20px 30px 20px; letter-spacing: 1px; }
+.sidebar-brand { font-size: 1.5em; font-weight: 900; color: var(--text-main); padding: 0 20px 30px 20px; letter-spacing: 1px; }
 .sidebar-brand span { color: var(--accent-blue); }
 .nav-btn { background: transparent; border: none; color: var(--text-muted); padding: 15px 20px; text-align: left; font-size: 1em; font-weight: 500; cursor: pointer; transition: 0.2s; border-left: 3px solid transparent; width: 100%; }
 .nav-btn:hover { background-color: var(--bg-hover); color: var(--text-main); }
-.nav-btn.active { background-color: var(--bg-hover); color: white; border-left-color: var(--accent-blue); }
+.nav-btn.active { background-color: var(--bg-hover); color: var(--text-main); border-left-color: var(--accent-blue); }
 
 /* CONTENU PRINCIPAL */
 .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -38,6 +26,70 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 .search-bar { background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 15px; border-radius: 6px; width: 300px; outline: none; transition: 0.2s; }
 .search-bar:focus { border-color: var(--accent-blue); }
 .time-filter { background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 15px; border-radius: 6px; outline: none; cursor: pointer; font-weight: bold; }
+
+/* =========================================================================
+   CONTRÔLES DE FILTRE RÉUTILISABLES — langage visuel commun à TOUTES les pages
+   (Screener, Simulator, TopHeader, Predictions). On centralise ici pour que
+   modifier UNE règle mette à jour l'apparence des filtres partout.
+   Toutes les couleurs passent par les tokens de thème → compatibles Dark/Solar.
+   ========================================================================= */
+
+/* Champ étiqueté (colonne label + contrôle) */
+.filter-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.filter-field--inline { flex-direction: row; align-items: center; gap: 8px; }
+.filter-label { color: var(--text-muted); font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Contrôle générique (input & select partagent EXACTEMENT le même style) */
+.filter-control {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-base);
+  color: var(--text-main);
+  font-size: 0.9em;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.filter-control::placeholder { color: var(--text-muted); font-weight: 500; }
+.filter-control:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px var(--accent-blue-soft); }
+select.filter-control { cursor: pointer; }
+.filter-control:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Panneau conteneur de filtres (grille responsive) */
+.filter-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 18px;
+  align-items: end;
+  background: var(--bg-panel);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 24px;
+}
+
+/* Groupe de puces (toggles rapides) */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.filter-chip {
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+  padding: 8px 16px;
+  font-size: 0.82em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.filter-chip:hover { color: var(--text-main); border-color: var(--text-muted); }
+.filter-chip.active {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
 
 /* VUES (Scrollables) */
 .view-area { flex: 1; overflow-y: auto; padding: 30px; }
@@ -52,7 +104,7 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 .stock-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; }
 .stock-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); border-color: var(--text-muted); }
 .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-.stock-symbol { font-size: 1.4em; font-weight: 800; color: white; display: block; margin-bottom: 2px; }
+.stock-symbol { font-size: 1.4em; font-weight: 800; color: var(--text-main); display: block; margin-bottom: 2px; }
 .stock-name { font-size: 0.85em; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; display: block; }
 .stock-price { font-size: 1.4em; font-weight: bold; text-align: right; }
 .stock-var { font-size: 0.9em; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; }
@@ -67,7 +119,7 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 .btn-primary { background-color: var(--accent-blue); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
 .btn-primary:hover { background-color: var(--accent-blue-hover); }
 .form-group label { display: block; font-size: 0.85em; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
-.form-group input, .form-group select { width: 100%; background: var(--bg-base); border: 1px solid var(--border-color); color: white; padding: 12px; border-radius: 6px; }
+.form-group input, .form-group select { width: 100%; background: var(--bg-base); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px; border-radius: 6px; }
 
 /* TABLEAUX */
 table { width: 100%; border-collapse: collapse; background: var(--bg-panel); border-radius: 8px; overflow: hidden; }

@@ -1,8 +1,9 @@
+import os
 import numpy as np
 import pandas as pd
 from datetime import timedelta
 from xgboost import XGBClassifier
-from core.config import supabase_client, HORIZON_JOURS
+from core.config import supabase_client, HORIZON_JOURS, MODELS_DIR
 
 def run_daily_inference(today_data, features):
     print("[PREDICT] Génération des prédictions du jour...")
@@ -10,7 +11,7 @@ def run_daily_inference(today_data, features):
     
     # Chargement du modèle
     model = XGBClassifier()
-    model.load_model('models/best_xgb_model.json')
+    model.load_model(os.path.join(MODELS_DIR, 'best_xgb_model.json'))
     
     today_data['probabilite'] = model.predict_proba(today_data[features])[:, 1]
     today_data['signal'] = np.where(today_data['probabilite'] >= 0.70, "Achat Fort",

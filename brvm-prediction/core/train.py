@@ -1,6 +1,7 @@
 import os
 from xgboost import XGBClassifier
 from sklearn.model_selection import TimeSeriesSplit, RandomizedSearchCV
+from core.config import MODELS_DIR
 
 def optimize_and_train_model(df_train, features):
     print("[TRAIN] Lancement de la validation croisée...")
@@ -22,7 +23,8 @@ def optimize_and_train_model(df_train, features):
     
     print(f"[TRAIN] Meilleur ROC AUC : {search.best_score_:.4f}")
     
-    # Sauvegarde du modèle sur le disque
-    os.makedirs('models', exist_ok=True)
-    search.best_estimator_.save_model('models/best_xgb_model.json')
-    print("[TRAIN] Modèle sauvegardé dans models/best_xgb_model.json")
+    # Sauvegarde du modèle sur le disque (chemin ancré au projet)
+    os.makedirs(MODELS_DIR, exist_ok=True)
+    model_path = os.path.join(MODELS_DIR, 'best_xgb_model.json')
+    search.best_estimator_.save_model(model_path)
+    print(f"[TRAIN] Modèle sauvegardé dans {model_path}")
