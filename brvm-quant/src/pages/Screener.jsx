@@ -2,6 +2,7 @@ import React from 'react';
 import { useOutletContext } from 'react-router-dom';
 import StockCard from '../components/StockCard';
 import { FilterSelect, FilterInput, FilterPanel } from '../components/filters';
+import { getSector } from '../utils/brvmConfig';
 
 // Options des filtres (déclarées hors composant = pas recréées à chaque rendu)
 const SORT_OPTIONS = [
@@ -29,7 +30,8 @@ export default function Screener() {
     filterMinPrice, setFilterMinPrice,
     filterMaxPrice, setFilterMaxPrice,
     screenerData,
-    setSelectedStock
+    setSelectedStock,
+    sectorPerStats
   } = useOutletContext();
 
   return (
@@ -62,7 +64,12 @@ export default function Screener() {
       {/* RÉSULTATS DU SCREENER */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
         {screenerData.map(item => (
-          <StockCard key={item.symbole} item={item} onClick={setSelectedStock} />
+          <StockCard
+            key={item.symbole}
+            item={item}
+            onClick={setSelectedStock}
+            sectorAvgPer={sectorPerStats?.[getSector(item.symbole)]?.avg}
+          />
         ))}
         {screenerData.length === 0 && (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'var(--bg-panel)', borderRadius: '8px' }}>
