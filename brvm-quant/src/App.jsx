@@ -10,6 +10,7 @@ import { ComposedChart, Area, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as
 import Layout from './components/Layout';
 import AuthModal from './components/AuthModal';
 import SellModal from './components/SellModal';
+import PerSectorCompare from './components/PerSectorCompare';
 
 // Pages
 import Landing from './pages/Landing';
@@ -341,6 +342,26 @@ export default function App() {
     };
   }, [globallyFilteredMarket]);
 
+  // Moyenne des PER PAR SECTEUR (sur tout le marché, indépendamment des filtres).
+  // On EXCLUT les PER non significatifs (<= 0 : pertes ou donnée absente) pour ne
+  // pas fausser la moyenne. Résultat : { 'Finances': { avg, count }, ... }.
+  const sectorPerStats = useMemo(() => {
+    const acc = {};
+    marketData.forEach((s) => {
+      const per = Number(s.per);
+      if (!per || per <= 0) return;
+      const sec = getSector(s.symbole);
+      if (!acc[sec]) acc[sec] = { sum: 0, count: 0 };
+      acc[sec].sum += per;
+      acc[sec].count += 1;
+    });
+    const out = {};
+    Object.keys(acc).forEach((sec) => {
+      out[sec] = { avg: acc[sec].sum / acc[sec].count, count: acc[sec].count };
+    });
+    return out;
+  }, [marketData]);
+
   const screenerData = useMemo(() => {
       let result = globallyFilteredMarket.filter(i => {
         // Vérification Valorisation & RSI
@@ -513,6 +534,14 @@ export default function App() {
               <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px', fontWeight: 'bold' }}>Momentum RSI</div>
               <div style={{ fontSize: '1.3em', color: getRsiColor(selectedStock.statut_rsi), fontWeight: '900' }}>{selectedStock.statut_rsi || 'Neutre'}</div>
             </div>
+
+            {/* Comparaison du PER de la société à la moyenne de son secteur */}
+            <PerSectorCompare
+              per={selectedStock.per}
+              sectorAvg={sectorPerStats[getSector(selectedStock.symbole)]?.avg}
+              sectorName={getSector(selectedStock.symbole)}
+              count={sectorPerStats[getSector(selectedStock.symbole)]?.count || 0}
+            />
           </div>
 
           {/* ZONE DE GRAPHIQUES HISTORIQUES */}
@@ -556,6 +585,7 @@ export default function App() {
             filterVal={filterVal} setFilterVal={setFilterVal}
             filterRsi={filterRsi} setFilterRsi={setFilterRsi}
             screenerData={screenerData}
+            sectorPerStats={sectorPerStats}
             
             simCapital={simCapital} setSimCapital={setSimCapital}
             simStrategy={simStrategy} setSimStrategy={setSimStrategy}

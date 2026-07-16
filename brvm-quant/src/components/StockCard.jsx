@@ -1,8 +1,32 @@
 import React from 'react';
 import { getValColor } from '../utils/uiHelpers';
 
-export default function StockCard({ item, onClick }) {
+export default function StockCard({ item, onClick, sectorAvgPer }) {
   const isUp = item.variation >= 0;
+
+  // Comparaison compacte du PER à la moyenne du secteur (badge sur la carte).
+  const per = Number(item.per);
+  const avg = Number(sectorAvgPer);
+  let perBadge = null;
+  if (per > 0 && avg > 0) {
+    const delta = ((per - avg) / avg) * 100;
+    const below = per < avg;                                  // moins cher que le secteur
+    const color = below ? 'var(--up-color)' : 'var(--warn-color)';
+    perBadge = (
+      <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>
+        PER:{' '}
+        <strong style={{ color }}>
+          {per.toFixed(1)}× ({delta > 0 ? '+' : ''}{delta.toFixed(0)}% vs sect.)
+        </strong>
+      </span>
+    );
+  } else if (per > 0) {
+    perBadge = (
+      <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>
+        PER: <strong style={{ color: 'var(--text-main)' }}>{per.toFixed(1)}×</strong>
+      </span>
+    );
+  }
 
   return (
     <div 
@@ -46,6 +70,7 @@ export default function StockCard({ item, onClick }) {
               {item.rendement_dividende ? `${item.rendement_dividende}%` : 'N/A'}
             </strong>
           </span>
+          {perBadge}
         </div>
         
         <div style={{ textAlign: 'center', background: 'var(--bg-base)', padding: '10px', borderRadius: '8px', border: `1px solid ${item.score_ia >= 7 ? 'var(--up-color)' : item.score_ia <= 4 ? 'var(--down-color)' : 'var(--warn-color)'}` }}>
