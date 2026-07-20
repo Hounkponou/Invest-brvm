@@ -20,9 +20,11 @@
 import React, { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import usePredictions from "../hooks/usePredictions";
+import useGeminiRecos from "../hooks/useGeminiRecos";
 import PredictionCard from "../components/prediction/PredictionCard";
 import BacktestPanel from "../components/prediction/BacktestPanel";
 import StatCard from "../components/prediction/StatCard";
+import GeminiRecoPanel from "../components/prediction/GeminiRecoPanel";
 import { FilterChips } from "../components/filters";
 import { getSector } from "../utils/brvmConfig";
 import { computeBacktest, getSignal } from "../utils/predictionHelpers";
@@ -40,6 +42,8 @@ export default function Predictions() {
   const { searchQuery = "", globalSector = "All" } = useOutletContext() || {};
 
   const { live, closed, latestDate, loading, error, refetch } = usePredictions();
+  // Recommandations Gemini du jour, indexées par symbole (dégrade proprement si absent).
+  const { bySymbol: geminiBySymbol } = useGeminiRecos();
 
   const [tab, setTab] = useState("signals"); // "signals" | "challenge"
   const [filter, setFilter] = useState("all"); // force du signal (filtre local)
@@ -161,11 +165,11 @@ export default function Predictions() {
           ) : (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {filteredLive.map((pred) => (
-                <PredictionCard
-                  key={`${pred.date_prediction}-${pred.symbole}`}
-                  pred={pred}
-                  sector={getSector(pred.symbole)}
-                />
+                <div key={`${pred.date_prediction}-${pred.symbole}`} className="flex flex-col">
+                  <PredictionCard pred={pred} sector={getSector(pred.symbole)} />
+                  {/* Avis Gemini + contrôle croisé (rendu seulement s'il existe) */}
+                  <GeminiRecoPanel gemini={geminiBySymbol[pred.symbole]} />
+                </div>
               ))}
             </div>
           )}

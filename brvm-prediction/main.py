@@ -37,7 +37,7 @@ def main():
     parser = argparse.ArgumentParser(description="Application BRVM-Quant MLOps")
     parser.add_argument(
         "--task", type=str, required=True,
-        choices=["train", "predict", "evaluate"],
+        choices=["train", "predict", "evaluate", "gemini"],
         help="La tâche à exécuter",
     )
     parser.add_argument(
@@ -64,6 +64,13 @@ def main():
         # L'évaluation ne dépend pas du moteur : elle confronte les prédictions
         # passées aux cours réels d'aujourd'hui (df_raw).
         run_evaluation(df_raw)
+
+    elif args.task == "gemini":
+        # Recommandations Gemini (recherche web) + contrôle croisé avec le quant.
+        # Indépendant du moteur ; s'appuie sur les signaux déjà écrits par 'predict'
+        # et sur df_raw pour le sentiment de marché.
+        from core.gemini_reco import run_gemini_reco
+        run_gemini_reco(df_raw)
 
 
 if __name__ == "__main__":

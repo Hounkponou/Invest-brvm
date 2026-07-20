@@ -1,0 +1,119 @@
+{
+  "date": "2026-07-17",
+  "market_sentiment": "Neutre",
+  "generated_at": "2026-07-20T10:18:17+00:00",
+  "recos": {
+    "ABJC": {
+      "nom": "SERVAIR ABIDJAN COTE D'IVOIRE",
+      "recommandation": "Achat modéré",
+      "justification": "Le titre entre en zone de survente avec un RSI à 28 et amorce un rebond technique de 1,36%, offrant un point d'entrée opportuniste à court terme malgré une valorisation historiquement élevée (PER de 24,19).",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BICB": {
+      "nom": "BANQUE INTERNATIONALE POUR L’INDUSTRIE ET LE COMMERCE DU BENIN",
+      "recommandation": "Achat modéré",
+      "justification": "Bien que le RSI à 68 frôle la zone de surachat, la légère correction de -1,33% offre un point d'entrée intéressant à court terme sur ce titre qui affiche d'excellents fondamentaux (score IA 8/10) et un PER attractif de 10,18.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "BICC": {
+      "nom": "BICI COTE D'IVOIRE",
+      "recommandation": "Achat modéré",
+      "justification": "Le titre présente un point d'entrée technique attrayant avec un RSI à 40 proche de la survente et une amorce de rebond (+1,43%). Soutenue par des fondamentaux solides (score IA 7/10) et une valorisation correcte (PER 12,64), la valeur dispose d'un potentiel de hausse à court terme malgré un marché neutre.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "BNBC": {
+      "nom": "BERNABE COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "Bien que le RSI à 37 proche de la zone de survente puisse stabiliser le titre à court terme, le PER extrêmement lourd de 556.5 traduit une survalorisation flagrante qui interdit tout achat dans l'immédiat.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BOAB": {
+      "nom": "BANK OF AFRICA BENIN",
+      "recommandation": "Achat modéré",
+      "justification": "Le titre BOAB entre en zone de survente avec un RSI à 29, ce qui configure un point d'entrée technique propice à un rebond technique à court terme. Malgré un PER de 17.71 actuellement élevé pour le secteur, la qualité fondamentale de la valeur (score IA de 7/10) soutient cette opportunité d'achat à horizon 15 jours.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BOABF": {
+      "nom": "BANK OF AFRICA BURKINA FASO",
+      "recommandation": "Vente",
+      "justification": "Avec un RSI extrêmement suracheté à 94 et un PER élevé de 16.76, le titre BOABF présente un risque de correction technique imminent. Le score IA de 4/10 et la baisse du jour confirment qu'il est opportun de prendre ses bénéfices à un horizon de 15 jours.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BOAC": {
+      "nom": "BANK OF AFRICA COTE D'IVOIRE",
+      "recommandation": "Achat modéré",
+      "justification": "Malgré un marché neutre, BOA Côte d'Ivoire affiche des fondamentaux solides avec un score IA de 8/10 et un PER attractif de 10,94. Le RSI à 65 montre une dynamique haussière saine qui laisse présager un potentiel de croissance à court terme avant d'atteindre la zone de surachat.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "BOAM": {
+      "nom": "BANK OF AFRICA MALI",
+      "recommandation": "Vente",
+      "justification": "Avec un RSI extrêmement élevé à 90 signalant une zone de surachat critique et un score IA de 4/10, le titre BOA Mali présente un risque imminent de correction technique. Un PER de 14.29, élevé pour le secteur bancaire de la BRVM, justifie une prise de bénéfices à court terme.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BOAN": {
+      "nom": "BANK OF AFRICA NIGER",
+      "recommandation": "Vente",
+      "justification": "Avec un RSI à 85 signalant un surachat extrême et un PER déconnecté des fondamentaux à 267, le titre BOA Niger présente un risque élevé de correction technique à court terme. Le léger repli de -0,83% confirme l'essoufflement de la dynamique haussière sur le marché.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BOAS": {
+      "nom": "BANK OF AFRICA SENEGAL",
+      "recommandation": "Vente",
+      "justification": "Avec un RSI à 72 signalant une situation de surachat après une hausse quotidienne de 4,05 %, et un score IA faible de 4/10, le titre présente un risque élevé de correction technique à court terme. Il est opportun de prendre ses bénéfices à cet horizon de 15 jours avant un probable repli.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "CABC": {
+      "nom": "SICABLE COTE D'IVOIRE",
+      "recommandation": "Achat modéré",
+      "justification": "Avec un RSI à 35 proche de la zone de survente et un score IA solide de 7/10, le titre présente un point d'entrée technique intéressant pour un rebond à court terme. La légère hausse du jour confirme une stabilisation du cours dans un marché globalement neutre.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "CBIBF": {
+      "nom": "CORIS BANK INTERNATIONAL BURKINA FASO",
+      "recommandation": "Vente",
+      "justification": "Avec un RSI en zone de surachat extrême à 83 et un recul de -5,03%, le titre CBIBF entame une correction technique légitime. Le score IA de 4/10 et un PER de 13,92, élevé pour le secteur, incitent à une prise de bénéfices tactique à horizon 15 jours.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "CFAC": {
+      "nom": "CFAO MOTORS COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "Malgré une valorisation tendue caractérisée par un PER élevé de 34,05, la proximité de la zone de survente avec un RSI à 33 et le léger rebond technique du jour militent pour le maintien des positions à court terme. Le manque de catalyseurs immédiats et le contexte de marché neutre incitent à la prudence.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "CIEC": {
+      "nom": "CIE COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "Malgré un rebond technique de 5,91% ce jour, la valorisation de la CIE reste particulièrement tendue avec un PER élevé de 22,18 et un score IA faible de 3/10. Le RSI à 45 confirme l'absence de tendance claire, justifiant une position d'attente à court terme dans un marché globalement neutre.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "NTLC": {
+      "nom": "NESTLE COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "Avec un RSI à 69 proche de la zone de surachat et un PER élevé de 19.16, le titre Nestlé CI montre des signes d'essoufflement à court terme après sa récente hausse. Nous conseillons de conserver les positions actuelles en attendant une correction technique saine pour se repositionner à l'achat.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "ONTBF": {
+      "nom": "ONATEL BURKINA FASO",
+      "recommandation": "Achat modéré",
+      "justification": "Avec un RSI à 31 proche de la zone de survente et un score IA solide de 7/10, le titre présente un point d'entrée technique attractif pour un rebond à court terme. La valorisation actuelle (PER 12.6) offre une marge de sécurité intéressante malgré la neutralité du marché régional.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    }
+  }
+}
