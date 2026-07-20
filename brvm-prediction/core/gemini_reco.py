@@ -34,10 +34,11 @@ OUTPUT_PATH = os.path.join(os.path.dirname(BASE_DIR), "brvm-quant", "public", "g
 # disponible (gemini-2.5-flash a été retiré aux nouveaux comptes).
 GEMINI_MODEL = "gemini-flash-latest"
 
-# Nombre MAX de titres analysés par exécution. Le palier gratuit Gemini est limité
-# à ~20 requêtes/jour/modèle : on plafonne sous cette limite et on priorise les
-# meilleurs scores. Monte cette valeur (ou passe un `limit`) si tu as un plan payant.
-DAILY_MAX = 18
+# MODE LOTS (sans grounding) : une seule requête Gemini couvre BATCH_SIZE actions.
+# ~47 titres / 18 = 3 requêtes -> très en dessous du quota gratuit (20 req/jour/modèle),
+# donc on couvre TOUS les titres chaque jour. Sans grounding, regrouper ne dégrade
+# pas la qualité (Gemini reçoit les données quantitatives de chaque action).
+BATCH_SIZE = 18
 
 # Recherche web (grounding Google Search) : INDISPONIBLE sur le palier gratuit
 # (quota nul -> erreur 429). Laissé à False par défaut pour fonctionner en gratuit
@@ -155,6 +156,48 @@ def _call_gemini(client, *, symbole, nom, market_sentiment, analyse):
     }
 
 
+def _call_gemini_batch(client, items, market_sentiment):
+    """UNE seule requête pour PLUSIEURS actions (mode gratuit, sans grounding).
+
+    `items` : liste de {symbole, nom, analyse}.
+    Retourne {SYMBOLE: {recommandation, justification, sentiment_web, sources}}.
+    Réduit drastiquement le nombre d'appels : ~3 requêtes couvrent les 47 titres.
+    """
+    from google.genai import types  # dépendance optionnelle, import local
+
+    lignes = "\n".join(f"- {it['symbole']} ({it['nom']}) : {it['analyse']}" for it in items)
+    prompt = (
+        "Tu es analyste actions spécialiste de la BRVM (bourse régionale de l'UEMOA).\n"
+        f"Sentiment de marché BRVM du jour : {market_sentiment}.\n"
+        "Analyse les actions suivantes (sigle, nom, données quantitatives internes) :\n"
+        f"{lignes}\n\n"
+        "Pour CHAQUE action, en tenant compte du marché, de ce que tu connais de la "
+        "société et de ces données, donne une recommandation CLAIRE à ~15 jours.\n"
+        "Réponds UNIQUEMENT par un objet JSON valide dont les CLÉS sont les SIGLES, "
+        "chaque valeur ayant : "
+        '{"recommandation": "Achat fort"|"Achat modéré"|"Conservation"|"Vente", '
+        '"justification": "1 à 2 phrases en français", '
+        '"sentiment_web": "Positif"|"Neutre"|"Négatif"}. '
+        'Exemple : {"SGBC": {"recommandation": "Achat modéré", "justification": "…", '
+        '"sentiment_web": "Positif"}}'
+    )
+    config = types.GenerateContentConfig(temperature=0.2)
+    resp = client.models.generate_content(model=GEMINI_MODEL, contents=prompt, config=config)
+
+    data = _parse_json(getattr(resp, "text", "") or "")
+    out = {}
+    for sym, v in data.items():
+        if not isinstance(v, dict):
+            continue
+        out[str(sym).strip().upper()] = {
+            "recommandation": _normalize_reco(v.get("recommandation", "")),
+            "justification": str(v.get("justification", "")).strip()[:600],
+            "sentiment_web": str(v.get("sentiment_web", "Neutre"))[:20],
+            "sources": [],
+        }
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Orchestrateur : parcourt les actions du jour, appelle Gemini, écrit le JSON
 # ---------------------------------------------------------------------------
@@ -174,7 +217,8 @@ def _analyse_context(row) -> str:
 
 def run_gemini_reco(df_market, limit: int | None = None):
     """Génère les recommandations Gemini du jour et écrit gemini_recos.json."""
-    print("[GEMINI] Recommandations IA par action (recherche web)...")
+    mode = "grounding web (1 appel/action)" if USE_WEB_GROUNDING else "mode lots"
+    print(f"[GEMINI] Recommandations IA par action — {mode}...")
     if not GEMINI_API_KEY:
         print("[GEMINI] GEMINI_API_KEY absent : étape ignorée.")
         return 0
@@ -192,24 +236,29 @@ def run_gemini_reco(df_market, limit: int | None = None):
     # Dernière séance uniquement, une ligne par action
     last_date = df_market["date"].max()
     day = df_market[df_market["date"] == last_date].drop_duplicates(subset=["symbole"], keep="last")
-    # Priorise les titres au meilleur score (les plus pertinents) — clé quand le
-    # quota est limité (gratuit = 20 requêtes/jour/modèle).
+    # Tri par score : si une exécution est partielle, les meilleurs titres passent d'abord.
     if "score_ia" in day.columns:
         day = day.sort_values("score_ia", ascending=False)
-    # Plafond effectif : le `limit` explicite s'il est fourni, sinon DAILY_MAX.
-    effective_limit = limit if limit is not None else DAILY_MAX
-    if effective_limit:
-        day = day.head(effective_limit)
+    if limit:                       # `limit` = borne facultative (tests) ; sinon TOUTES les actions
+        day = day.head(limit)
 
     market_sentiment = compute_market_sentiment(df_market)
     date_str = str(last_date)[:10]
     print(f"[GEMINI] Séance {date_str} | {len(day)} actions | marché {market_sentiment}")
 
-    def _with_retry(**kw):
-        """Appelle Gemini avec un ré-essai en cas de 429 (limite de débit gratuite)."""
+    # Contexte compact par action
+    items = [
+        {"symbole": r["symbole"], "nom": (r.get("nom", r["symbole"]) or r["symbole"]),
+         "analyse": _analyse_context(r)}
+        for _, r in day.iterrows()
+    ]
+    nom_par_sym = {it["symbole"]: it["nom"] for it in items}
+
+    def _retry_429(fn, *a, **kw):
+        """Exécute avec un ré-essai en cas de 429 (limite de débit ponctuelle)."""
         for attempt in range(2):
             try:
-                return _call_gemini(client, **kw)
+                return fn(*a, **kw)
             except Exception as exc:  # noqa: BLE001
                 if "429" in str(exc) and attempt == 0:
                     print("[GEMINI]   quota momentané (429), pause 25s puis nouvel essai...")
@@ -218,29 +267,35 @@ def run_gemini_reco(df_market, limit: int | None = None):
                 raise
 
     recos = {}
-    for _, row in day.iterrows():
-        sym = row["symbole"]
-        nom = row.get("nom", sym) or sym
-        try:
-            g = _with_retry(
-                symbole=sym,
-                nom=nom,
-                market_sentiment=market_sentiment,
-                analyse=_analyse_context(row),
-            )
-        except Exception as exc:  # noqa: BLE001 - un échec isolé n'arrête pas le lot
-            print(f"[GEMINI] {sym} : échec appel Gemini ({exc}). Ignoré.")
-            continue
-
-        recos[sym] = {
-            "nom": nom,
-            "recommandation": g["recommandation"],
-            "justification": g["justification"],
-            "sentiment_web": g["sentiment_web"],
-            "sources": g["sources"],
-        }
-        print(f"[GEMINI]   {sym}: {g['recommandation']}")
-        time.sleep(2.0)  # throttle pour rester sous la limite de débit gratuite
+    if USE_WEB_GROUNDING:
+        # Grounding actif (plan payant) : 1 appel par action = meilleure recherche web.
+        for it in items:
+            try:
+                g = _retry_429(_call_gemini, client, symbole=it["symbole"], nom=it["nom"],
+                               market_sentiment=market_sentiment, analyse=it["analyse"])
+            except Exception as exc:  # noqa: BLE001 - un échec isolé n'arrête pas le lot
+                print(f"[GEMINI] {it['symbole']} : échec appel Gemini ({exc}). Ignoré.")
+                continue
+            recos[it["symbole"]] = {"nom": it["nom"], **g}
+            print(f"[GEMINI]   {it['symbole']}: {g['recommandation']}")
+            time.sleep(2.0)
+    else:
+        # Mode gratuit : LOTS de BATCH_SIZE actions -> ~3 appels couvrent tous les titres.
+        for i in range(0, len(items), BATCH_SIZE):
+            batch = items[i:i + BATCH_SIZE]
+            syms = [it["symbole"] for it in batch]
+            try:
+                res = _retry_429(_call_gemini_batch, client, batch, market_sentiment)
+            except Exception as exc:  # noqa: BLE001 - un lot raté n'arrête pas les autres
+                print(f"[GEMINI] lot {syms[:3]}… échec ({exc}). Ignoré.")
+                continue
+            got = 0
+            for sym in syms:
+                if sym in res:
+                    recos[sym] = {"nom": nom_par_sym.get(sym, sym), **res[sym]}
+                    got += 1
+            print(f"[GEMINI]   lot {i // BATCH_SIZE + 1} : {got}/{len(batch)} recos")
+            time.sleep(3.0)
 
     if not recos:
         print("[GEMINI] Aucune recommandation produite.")
