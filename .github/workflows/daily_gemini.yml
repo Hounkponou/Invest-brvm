@@ -1,0 +1,38 @@
+name: Recommandations Gemini (par action)
+
+on:
+  schedule:
+    - cron: '15 18 * * 1-5'  # 18:15 UTC, après l'inférence (18:00)
+  workflow_dispatch:
+
+jobs:
+  gemini:
+    runs-on: ubuntu-latest
+    # Autorise le GITHUB_TOKEN à pousser le JSON régénéré (Vercel redéploie au push)
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Installer les dépendances
+        working-directory: ./brvm-prediction
+        run: pip install -r requirements.txt
+
+      - name: Générer les recommandations Gemini
+        working-directory: ./brvm-prediction
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python main.py --task gemini
+
+      - name: Committer le JSON des recommandations
+        run: |
+          git config --global user.name 'GitHub Action Bot'
+          git config --global user.email 'action@github.com'
+          git add brvm-quant/public/gemini_recos.json
+          git commit -m "Automated Gemini recommendations update" || echo "No changes to commit"
+          git push
