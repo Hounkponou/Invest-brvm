@@ -14,3 +14,4 @@ SQLAlchemy
 numpy 
 scikit-learn 
 xgboost
+google-genai
