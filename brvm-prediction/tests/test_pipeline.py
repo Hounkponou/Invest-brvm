@@ -1,0 +1,136 @@
+"""
+Tests de la LOGIQUE PURE du pipeline (aucun réseau, aucun secret réel).
+
+Couvre les briques dont une régression casserait silencieusement la production :
+  - dérivations upsert (score/10, signal, validation stricte, erreurs de schéma) ;
+  - validation croisée purgée (anti-fuite sur données de panel) ;
+  - winsorisation sans fuite look-ahead ;
+  - dérivations Gemini (normalisation, parsing JSON, sentiment marché, batch).
+"""
+
+import numpy as np
+import pandas as pd
+
+from scripts.upsert_predictions import (  # noqa: E402
+    proba_to_score_10, proba_to_signal, build_records, _is_schema_error,
+)
+from core.validation import PurgedKFold  # noqa: E402
+from core.features_enhanced import _winsorize  # noqa: E402
+from core.gemini_reco import (  # noqa: E402
+    _normalize_reco, _parse_json, compute_market_sentiment, _call_gemini_batch,
+)
+
+
+# --------------------------------------------------------------------------- upsert
+def test_proba_to_score_10_bornes():
+    assert proba_to_score_10(0.0) == 0
+    assert proba_to_score_10(1.0) == 10
+    assert proba_to_score_10(0.82) == 8
+    assert proba_to_score_10(2.0) == 10  # borné
+
+
+def test_proba_to_signal_seuils():
+    assert proba_to_signal(0.80) == "Achat Fort"
+    assert proba_to_signal(0.60) == "Achat Modéré"
+    assert proba_to_signal(0.40) == "Conserver"
+
+
+def test_build_records_rejette_lignes_invalides():
+    demo = pd.DataFrame({
+        "date": ["2026-07-03"] * 5,
+        "symbole": ["SGBC", "   ", None, np.nan, "ORAC"],  # 3 invalides
+        "close": [12500, 3400, 3400, 3400, 3400],
+        "probabilite": [0.82, 0.61, 0.61, 0.61, 0.61],
+    })
+    res = build_records(demo)
+    assert [r["symbole"] for r in res.records] == ["SGBC", "ORAC"]
+    assert len(res.skipped) == 3
+
+
+def test_build_records_rejette_prix_et_proba_hors_bornes():
+    demo = pd.DataFrame({
+        "date": ["2026-07-03"] * 2,
+        "symbole": ["AAA", "BBB"],
+        "close": [0, 100],           # AAA prix invalide
+        "probabilite": [0.5, 1.4],   # BBB proba hors [0,1]
+    })
+    res = build_records(demo)
+    assert res.records == []
+
+
+def test_is_schema_error():
+    assert _is_schema_error(Exception("PGRST204 could not find column"))
+    assert _is_schema_error(Exception("42P10 no unique or exclusion constraint"))
+    assert not _is_schema_error(Exception("statement timeout 57014"))
+
+
+# --------------------------------------------------------------------------- validation
+def test_purged_kfold_purge_en_seances():
+    # Panel : 10 séances x 3 titres, l'axe temporel doit purger EN SÉANCES.
+    time_groups = np.repeat(np.arange(10), 3)
+    X = np.zeros((len(time_groups), 2))
+    cv = PurgedKFold(n_splits=5, horizon=2, embargo=1)
+    folds = list(cv.split(X, groups=time_groups))
+    assert len(folds) == 5
+    for tr, te in folds:
+        te_sessions = set(time_groups[te])
+        tr_sessions = set(time_groups[tr])
+        # Aucune séance d'entraînement à moins de `horizon` séances du test (purge).
+        lo, hi = min(te_sessions), max(te_sessions)
+        for s in tr_sessions:
+            assert s < lo - 2 or s > hi + 2
+
+
+# --------------------------------------------------------------------------- features
+def test_winsorize_sans_fuite():
+    # Deux extrêmes "futurs" hors du masque d'entraînement ne doivent PAS fixer les bornes.
+    s = pd.Series(np.r_[np.arange(100), [10000, -9999]].astype(float))
+    mask = pd.Series([True] * 100 + [False, False])
+    w = _winsorize(s, fit_mask=mask)
+    assert w.max() < 200      # borne calée sur le train, pas sur 10000
+    assert w.min() > -100
+
+
+# --------------------------------------------------------------------------- gemini
+def test_normalize_reco():
+    assert _normalize_reco("je conseille un ACHAT FORT") == "Achat fort"
+    assert _normalize_reco("acheter") == "Achat modéré"
+    assert _normalize_reco("vendre maintenant") == "Vente"
+    assert _normalize_reco("garder") == "Conservation"
+
+
+def test_parse_json_tolere_markdown():
+    d = _parse_json('```json\n{"a": 1, "b": {"c": 2}}\n```')
+    assert d == {"a": 1, "b": {"c": 2}}
+    assert _parse_json("pas de json ici") == {}
+
+
+def test_compute_market_sentiment():
+    haussier = pd.DataFrame({"date": pd.to_datetime(["2026-07-17"] * 3),
+                             "variation": [2.0, 1.0, -0.1]})
+    baissier = pd.DataFrame({"date": pd.to_datetime(["2026-07-17"] * 3),
+                             "variation": [-2.0, -1.0, 0.1]})
+    assert compute_market_sentiment(haussier) == "Haussier"
+    assert compute_market_sentiment(baissier) == "Baissier"
+    assert compute_market_sentiment(None) == "Neutre"
+
+
+def test_call_gemini_batch_parse():
+    class _Resp:
+        text = ('{"SGBC": {"recommandation":"achat modéré","justification":"x",'
+                '"sentiment_web":"Positif"}, "BOAC": {"recommandation":"vendre",'
+                '"justification":"y","sentiment_web":"Négatif"}}')
+        candidates = []
+
+    class _Models:
+        def generate_content(self, model, contents, config):
+            return _Resp()
+
+    class _Client:
+        models = _Models()
+
+    items = [{"symbole": "SGBC", "nom": "a", "analyse": "z"},
+             {"symbole": "BOAC", "nom": "b", "analyse": "z"}]
+    out = _call_gemini_batch(_Client(), items, "Neutre")
+    assert out["SGBC"]["recommandation"] == "Achat modéré"
+    assert out["BOAC"]["recommandation"] == "Vente"
