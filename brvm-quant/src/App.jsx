@@ -184,6 +184,20 @@ export default function App() {
       setLoadingHistory(true);
       setChartHorizon('ALL'); 
       try {
+        // 1) CHEMIN RAPIDE : historique pré-généré dans Supabase Storage (CDN, 1 requête).
+        //    Sort la lecture d'historique de Postgres (auparavant paginée en 1000 lignes).
+        try {
+          const { data: pub } = supabase.storage.from('market-history').getPublicUrl(`${selectedStock.symbole}.json`);
+          if (pub?.publicUrl) {
+            const res = await fetch(pub.publicUrl, { cache: 'no-cache' });
+            if (res.ok) {
+              const rows = await res.json();
+              if (Array.isArray(rows) && rows.length) { setStockHistory(rows); return; }
+            }
+          }
+        } catch (_) { /* fichier absent -> repli Supabase */ }
+
+        // 2) REPLI : lecture paginée directe (si l'export n'a pas encore tourné pour ce titre).
         let allStockData = [], startRow = 0, keepFetching = true;
         while (keepFetching) {
           const { data } = await supabase.from('full_stock_pro').select('date, close, sma_20, volume').eq('symbole', selectedStock.symbole).order('date', { ascending: true }).range(startRow, startRow + 999);
