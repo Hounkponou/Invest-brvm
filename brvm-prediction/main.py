@@ -37,7 +37,7 @@ def main():
     parser = argparse.ArgumentParser(description="Application BRVM-Quant MLOps")
     parser.add_argument(
         "--task", type=str, required=True,
-        choices=["train", "predict", "evaluate", "gemini"],
+        choices=["train", "predict", "evaluate", "gemini", "export"],
         help="La tâche à exécuter",
     )
     parser.add_argument(
@@ -71,6 +71,11 @@ def main():
         # et sur df_raw pour le sentiment de marché.
         from core.gemini_reco import run_gemini_reco
         run_gemini_reco(df_raw)
+
+    elif args.task == "export":
+        # Pré-calcul des artefacts statiques (snapshot marché) servis par le CDN.
+        from core.export_artifacts import run_export
+        run_export(df_raw)
 
 
 if __name__ == "__main__":
