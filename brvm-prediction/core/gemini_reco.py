@@ -298,8 +298,14 @@ def run_gemini_reco(df_market, limit: int | None = None):
             time.sleep(3.0)
 
     if not recos:
-        print("[GEMINI] Aucune recommandation produite.")
-        return 0
+        # Il y AVAIT des actions à traiter mais Gemini n'a rien renvoyé -> échec RÉEL
+        # (clé invalide, quota, panne API). On lève pour que le job CI échoue et
+        # déclenche une alerte, au lieu de "réussir" en silence (ce qui a masqué un
+        # bug une semaine entière).
+        raise RuntimeError(
+            f"[GEMINI] Aucune recommandation produite pour {len(day)} actions "
+            "(clé invalide / quota / API). Job en échec volontaire pour alerter."
+        )
 
     payload = {
         "date": date_str,

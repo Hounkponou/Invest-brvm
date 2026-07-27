@@ -1,0 +1,25 @@
+name: Tests (pipeline)
+
+on:
+  push:
+    paths:
+      - 'brvm-prediction/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./brvm-prediction
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Installer les dépendances + pytest
+        run: pip install -r requirements.txt pytest
+      - name: Lancer les tests (aucun secret requis)
+        run: python -m pytest -q
