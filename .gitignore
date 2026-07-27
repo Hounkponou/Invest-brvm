@@ -1,8 +1,12 @@
 # Environnement et Secrets
 .env
 
-# Données locales
+# Données locales (sortie du scraper, etc.)
 data/
+
+# ...mais les artefacts CDN pré-calculés servis par le frontend DOIVENT être versionnés
+!brvm-quant/public/data/
+!brvm-quant/public/data/**
 
 # Fichiers temporaires Python
 __pycache__/
