@@ -1,0 +1,22 @@
+name: Health check (fraîcheur prod)
+
+on:
+  schedule:
+    - cron: '0 19 * * 1-5'  # 19:00 UTC, après la chaîne pipeline (predict/gemini/export)
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Contrôle de fraîcheur des artefacts en production
+        working-directory: ./brvm-prediction
+        env:
+          SITE_URL: https://invest-brvm.vercel.app
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          MAX_STALE_DAYS: '5'
+        run: python scripts/health_check.py   # exit != 0 -> job rouge -> alerte mail
