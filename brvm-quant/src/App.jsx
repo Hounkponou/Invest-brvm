@@ -138,23 +138,32 @@ export default function App() {
   useEffect(() => {
     if (!user) return; 
     
+    // Enrichit chaque action avec les points de trading calculés (ATR).
+    const enrich = (rows) => (rows || []).map((s) => ({ ...s, ...calculateTradingPoints(s) }));
+
     async function fetchLatestMarket() {
       setLoadingMarket(true);
       try {
-        const { data: dateData } = await supabase.from('full_stock_pro').select('date').order('date', { ascending: false }).limit(1);
-        if (dateData[0]?.date) {
-          const { data } = await supabase.from('full_stock_pro').select('*').eq('date', dateData[0].date);
-          
-          // Injection automatique des points de trading calculés
-          const enrichedData = data ? data.map(stock => {
-            const tradingPoints = calculateTradingPoints(stock);
-            return { ...stock, ...tradingPoints };
-          }) : [];
+        // 1) CHEMIN RAPIDE : artefact statique servi par le CDN (aucune requête DB).
+        //    C'est la lecture massive de l'app -> on la sort de Postgres.
+        try {
+          const res = await fetch(`${import.meta.env.BASE_URL || '/'}data/market_latest.json`, { cache: 'no-cache' });
+          if (res.ok) {
+            const json = await res.json();
+            if (Array.isArray(json?.stocks) && json.stocks.length) {
+              setMarketData(enrich(json.stocks));
+              return; // succès : on ne touche pas à la base
+            }
+          }
+        } catch (_) { /* fichier absent -> on bascule sur Supabase */ }
 
-          console.log("Données enrichies chargées dans App.jsx :", enrichedData);
-          setMarketData(enrichedData);
+        // 2) REPLI : lecture directe Supabase (si l'export n'a pas encore tourné).
+        const { data: dateData } = await supabase.from('full_stock_pro').select('date').order('date', { ascending: false }).limit(1);
+        if (dateData?.[0]?.date) {
+          const { data } = await supabase.from('full_stock_pro').select('*').eq('date', dateData[0].date);
+          setMarketData(enrich(data));
         }
-      } catch (err) { console.error(err); } 
+      } catch (err) { console.error(err); }
       finally { setLoadingMarket(false); }
     }
     
