@@ -13,8 +13,10 @@ if os.path.exists(_ROOT_ENV):
 else:
     load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# .strip() : un secret GitHub collé avec un retour-ligne/espace parasite rendrait
+# la clé invalide côté API (erreur 400 API_KEY_INVALID). On nettoie systématiquement.
+SUPABASE_URL = (os.getenv("SUPABASE_URL") or "").strip()
+SUPABASE_KEY = (os.getenv("SUPABASE_KEY") or "").strip()
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("Les identifiants Supabase sont manquants dans les variables d'environnement.")
@@ -24,7 +26,7 @@ supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Clé Gemini (facultative : seule la tâche 'gemini' en a besoin). Reste côté
 # serveur uniquement — ne JAMAIS l'exposer au frontend.
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip() or None
 
 # Paramètres globaux du modèle
 HORIZON_JOURS = 15
