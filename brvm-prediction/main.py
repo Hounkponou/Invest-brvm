@@ -14,9 +14,11 @@ Le flag rend la bascule RÉVERSIBLE : aucun ancien fichier n'a été modifié.
 """
 
 import argparse
+import time
 
 from core.extraction import fetch_historical_data
 from core.evaluate import run_evaluation
+from core.metrics import record_run
 
 
 def _load_engine(engine: str):
@@ -50,32 +52,43 @@ def main():
 
     build_features, optimize_and_train_model, run_daily_inference = _load_engine(args.engine)
 
-    # Extraction commune à toutes les tâches
-    df_raw = fetch_historical_data()
-    train_data, today_data, feature_cols = build_features(df_raw)
+    # Chaque exécution est chronométrée et journalisée dans pipeline_runs
+    # (observabilité). Un échec est enregistré AVANT de propager l'erreur.
+    start = time.time()
+    result = None
+    try:
+        # Extraction commune à toutes les tâches
+        df_raw = fetch_historical_data()
+        train_data, today_data, feature_cols = build_features(df_raw)
 
-    if args.task == "train":
-        optimize_and_train_model(train_data, feature_cols)
+        if args.task == "train":
+            optimize_and_train_model(train_data, feature_cols)
 
-    elif args.task == "predict":
-        run_daily_inference(today_data, feature_cols)
+        elif args.task == "predict":
+            run_daily_inference(today_data, feature_cols)
 
-    elif args.task == "evaluate":
-        # L'évaluation ne dépend pas du moteur : elle confronte les prédictions
-        # passées aux cours réels d'aujourd'hui (df_raw).
-        run_evaluation(df_raw)
+        elif args.task == "evaluate":
+            # L'évaluation ne dépend pas du moteur : elle confronte les prédictions
+            # passées aux cours réels d'aujourd'hui (df_raw).
+            run_evaluation(df_raw)
 
-    elif args.task == "gemini":
-        # Recommandations Gemini (recherche web) + contrôle croisé avec le quant.
-        # Indépendant du moteur ; s'appuie sur les signaux déjà écrits par 'predict'
-        # et sur df_raw pour le sentiment de marché.
-        from core.gemini_reco import run_gemini_reco
-        run_gemini_reco(df_raw)
+        elif args.task == "gemini":
+            # Recommandations Gemini + df_raw pour le sentiment de marché.
+            from core.gemini_reco import run_gemini_reco
+            result = run_gemini_reco(df_raw)
 
-    elif args.task == "export":
-        # Pré-calcul des artefacts statiques (snapshot marché) servis par le CDN.
-        from core.export_artifacts import run_export
-        run_export(df_raw)
+        elif args.task == "export":
+            # Pré-calcul des artefacts statiques (snapshot marché) servis par le CDN.
+            from core.export_artifacts import run_export
+            result = run_export(df_raw)
+
+    except Exception as exc:  # noqa: BLE001 - on journalise l'échec puis on relance
+        record_run(args.task, "failed",
+                   {"engine": args.engine, "error": str(exc)[:300]}, time.time() - start)
+        raise
+
+    record_run(args.task, "success",
+               {"engine": args.engine, "result": result}, time.time() - start)
 
 
 if __name__ == "__main__":
