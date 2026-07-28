@@ -1,0 +1,24 @@
+name: Snapshot marché intra-day (near-real-time)
+
+on:
+  schedule:
+    - cron: '*/15 8-20 * * 1-5'  # toutes les 15 min, heures de marché, lun-ven
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Installer les dépendances
+        working-directory: ./brvm-prediction
+        run: pip install -r requirements.txt
+      - name: Snapshot léger -> Supabase Storage
+        working-directory: ./brvm-prediction
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python main.py --task snapshot   # ~2-3 s, aucune écriture git

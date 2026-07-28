@@ -39,7 +39,7 @@ def main():
     parser = argparse.ArgumentParser(description="Application BRVM-Quant MLOps")
     parser.add_argument(
         "--task", type=str, required=True,
-        choices=["train", "predict", "evaluate", "gemini", "export"],
+        choices=["train", "predict", "evaluate", "gemini", "export", "snapshot"],
         help="La tâche à exécuter",
     )
     parser.add_argument(
@@ -49,6 +49,19 @@ def main():
     )
     args = parser.parse_args()
     print(f"[MAIN] Tâche={args.task} | Moteur={args.engine}")
+
+    # Tâche LÉGÈRE 'snapshot' (near-real-time) : ne charge PAS tout l'historique.
+    # Traitée tôt, avant l'extraction lourde commune aux autres tâches.
+    if args.task == "snapshot":
+        from core.export_artifacts import run_snapshot
+        start = time.time()
+        try:
+            n = run_snapshot()
+        except Exception as exc:  # noqa: BLE001
+            record_run("snapshot", "failed", {"error": str(exc)[:300]}, time.time() - start)
+            raise
+        record_run("snapshot", "success", {"result": n}, time.time() - start)
+        return
 
     build_features, optimize_and_train_model, run_daily_inference = _load_engine(args.engine)
 

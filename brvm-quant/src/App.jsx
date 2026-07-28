@@ -141,30 +141,39 @@ export default function App() {
     // Enrichit chaque action avec les points de trading calculés (ATR).
     const enrich = (rows) => (rows || []).map((s) => ({ ...s, ...calculateTradingPoints(s) }));
 
-    async function fetchLatestMarket() {
-      setLoadingMarket(true);
+    async function fetchLatestMarket(silent = false) {
+      if (!silent) setLoadingMarket(true);
       try {
-        // 1) CHEMIN RAPIDE : artefact statique servi par le CDN (aucune requête DB).
-        //    C'est la lecture massive de l'app -> on la sort de Postgres.
+        // 1) SNAPSHOT LIVE : Supabase Storage, rafraîchi toutes les 15 min en séance
+        //    (near-real-time). Servi par CDN -> aucune requête DB par utilisateur.
+        try {
+          const { data: pub } = supabase.storage.from('market-history').getPublicUrl('market_latest.json');
+          if (pub?.publicUrl) {
+            const res = await fetch(pub.publicUrl, { cache: 'no-cache' });
+            if (res.ok) {
+              const json = await res.json();
+              if (Array.isArray(json?.stocks) && json.stocks.length) { setMarketData(enrich(json.stocks)); return; }
+            }
+          }
+        } catch (_) { /* -> snapshot quotidien */ }
+
+        // 2) SNAPSHOT QUOTIDIEN : artefact statique CDN (git/Vercel).
         try {
           const res = await fetch(`${import.meta.env.BASE_URL || '/'}data/market_latest.json`, { cache: 'no-cache' });
           if (res.ok) {
             const json = await res.json();
-            if (Array.isArray(json?.stocks) && json.stocks.length) {
-              setMarketData(enrich(json.stocks));
-              return; // succès : on ne touche pas à la base
-            }
+            if (Array.isArray(json?.stocks) && json.stocks.length) { setMarketData(enrich(json.stocks)); return; }
           }
-        } catch (_) { /* fichier absent -> on bascule sur Supabase */ }
+        } catch (_) { /* -> Supabase */ }
 
-        // 2) REPLI : lecture directe Supabase (si l'export n'a pas encore tourné).
+        // 3) REPLI : lecture directe Supabase (si aucun artefact disponible).
         const { data: dateData } = await supabase.from('full_stock_pro').select('date').order('date', { ascending: false }).limit(1);
         if (dateData?.[0]?.date) {
           const { data } = await supabase.from('full_stock_pro').select('*').eq('date', dateData[0].date);
           setMarketData(enrich(data));
         }
       } catch (err) { console.error(err); }
-      finally { setLoadingMarket(false); }
+      finally { if (!silent) setLoadingMarket(false); }
     }
     
     async function fetchCloudPortfolio() {
@@ -176,6 +185,17 @@ export default function App() {
 
     fetchLatestMarket();
     fetchCloudPortfolio();
+
+    // Near-real-time : rafraîchissement SILENCIEUX du marché toutes les 60 s, mais
+    // UNIQUEMENT pendant les heures de bourse BRVM (lun-ven, 8h-20h UTC). Lit le
+    // snapshot Storage (CDN) -> aucun coût côté base, quel que soit le nb d'utilisateurs.
+    const inMarketHours = () => {
+      const d = new Date();
+      const day = d.getUTCDay(), h = d.getUTCHours();
+      return day >= 1 && day <= 5 && h >= 8 && h < 20;
+    };
+    const poll = setInterval(() => { if (inMarketHours()) fetchLatestMarket(true); }, 60000);
+    return () => clearInterval(poll);
   }, [user]);
 
   useEffect(() => {
