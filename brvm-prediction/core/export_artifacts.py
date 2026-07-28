@@ -84,6 +84,42 @@ def _upload_history(df_market) -> int:
     return n
 
 
+def run_snapshot():
+    """Snapshot LÉGER de la dernière séance -> Supabase Storage (near-real-time).
+
+    Ne recharge PAS tout l'historique : une petite requête sur la vue MATÉRIALISÉE
+    (indexée) -> rapide, exécutable toutes les 15 min pendant les heures de marché.
+    Le frontend lit ce fichier en priorité et le rafraîchit par polling.
+    """
+    print("[SNAPSHOT] Snapshot léger de la dernière séance -> Storage...")
+    dr = (supabase_client.table("full_stock_pro").select("date")
+          .order("date", desc=True).limit(1).execute())
+    if not dr.data:
+        print("[SNAPSHOT] Aucune donnée.")
+        return 0
+    last = str(dr.data[0]["date"])[:10]
+    raw = (supabase_client.table("full_stock_pro")
+           .select("*").eq("date", last).execute().data) or []
+    # On ne garde que les colonnes utiles ET réellement présentes (robuste aux
+    # colonnes absentes de la vue, ex. rendement_dividende).
+    rows = [{k: r.get(k) for k in MARKET_COLUMNS if k in r} for r in raw]
+    for r in rows:
+        if r.get("date") is not None:
+            r["date"] = str(r["date"])[:10]
+
+    payload = json.dumps({"date": last, "count": len(rows), "stocks": rows},
+                         ensure_ascii=False).encode("utf-8")
+    _ensure_bucket()
+    opts = {"content-type": "application/json", "cache-control": "60", "upsert": "true"}
+    store = supabase_client.storage.from_(HISTORY_BUCKET)
+    try:
+        store.upload("market_latest.json", payload, opts)
+    except Exception:  # noqa: BLE001
+        store.update("market_latest.json", payload, opts)
+    print(f"[SNAPSHOT] {len(rows)} actions -> {HISTORY_BUCKET}/market_latest.json (séance {last})")
+    return len(rows)
+
+
 def run_export(df_market):
     """Écrit le snapshot marché (git/CDN) + l'historique par action (Storage/CDN)."""
     print("[EXPORT] Génération des artefacts statiques (snapshot marché)...")
