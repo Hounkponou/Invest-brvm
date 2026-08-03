@@ -66,11 +66,25 @@ def _symbol_universe(latest_date: str):
     pour ne pas oublier les titres illiquides qui n'ont pas coté aujourd'hui.
     """
     cutoff = (pd.to_datetime(latest_date) - pd.Timedelta(days=UNIVERSE_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
-    resp = _execute_with_retry(
-        supabase_client.table(VIEW).select("symbole").gte("date", cutoff),
-        label="univers des titres",
-    )
-    return sorted({r["symbole"] for r in (resp.data or []) if r.get("symbole")})
+    # PAGINATION obligatoire : sans elle, PostgREST plafonne à 1000 lignes et, avec
+    # l'ordre de la vue MATÉRIALISÉE, ces 1000 lignes ne couvrent qu'une poignée de
+    # titres -> l'univers tombait à ~12 au lieu de 47 (bug post-matérialisation).
+    symbols: set[str] = set()
+    offset = 0
+    while True:
+        resp = _execute_with_retry(
+            supabase_client.table(VIEW).select("symbole").gte("date", cutoff)
+            .order("symbole").range(offset, offset + PAGE - 1),
+            label=f"univers des titres (offset {offset})",
+        )
+        batch = resp.data or []
+        if not batch:
+            break
+        symbols.update(r["symbole"] for r in batch if r.get("symbole"))
+        offset += PAGE
+        if len(batch) < PAGE:
+            break
+    return sorted(symbols)
 
 
 def _fetch_one_symbol(symbole: str):
