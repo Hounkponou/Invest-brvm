@@ -18,6 +18,7 @@ Note : l'historique par action (gros volume) relève d'un stockage objet dédié
 
 import json
 import os
+from datetime import datetime, timezone
 
 import numpy as np
 
@@ -107,8 +108,10 @@ def run_snapshot():
         if r.get("date") is not None:
             r["date"] = str(r["date"])[:10]
 
-    payload = json.dumps({"date": last, "count": len(rows), "stocks": rows},
-                         ensure_ascii=False).encode("utf-8")
+    payload = json.dumps(
+        {"date": last, "count": len(rows), "stocks": rows,
+         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds")},
+        ensure_ascii=False).encode("utf-8")
     _ensure_bucket()
     opts = {"content-type": "application/json", "cache-control": "60", "upsert": "true"}
     store = supabase_client.storage.from_(HISTORY_BUCKET)
@@ -142,6 +145,7 @@ def run_export(df_market):
         "date": str(last_date)[:10],
         "count": len(records),
         "stocks": records,
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     with open(MARKET_PATH, "w", encoding="utf-8") as f:
