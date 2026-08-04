@@ -28,6 +28,7 @@ export default function Layout(props) {
           globalSector={props.globalSector} setGlobalSector={props.setGlobalSector}
           resultCount={props.resultCount}
           isDarkMode={props.isDarkMode} toggleTheme={props.toggleTheme}
+          marketMeta={props.marketMeta}
         />
         
         <div className="view-area" style={{ padding: '30px', flex: 1 }}>

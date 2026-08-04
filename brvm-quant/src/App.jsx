@@ -88,6 +88,8 @@ export default function App() {
 
   const [marketData, setMarketData] = useState([]);
   const [loadingMarket, setLoadingMarket] = useState(false);
+  // Métadonnées de fraîcheur : { date (séance), generatedAt (ISO) } -> indicateur d'en-tête
+  const [marketMeta, setMarketMeta] = useState(null);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [globalSector, setGlobalSector] = useState('All');
@@ -152,7 +154,11 @@ export default function App() {
             const res = await fetch(pub.publicUrl, { cache: 'no-cache' });
             if (res.ok) {
               const json = await res.json();
-              if (Array.isArray(json?.stocks) && json.stocks.length) { setMarketData(enrich(json.stocks)); return; }
+              if (Array.isArray(json?.stocks) && json.stocks.length) {
+                setMarketData(enrich(json.stocks));
+                setMarketMeta({ date: json.date, generatedAt: json.generated_at || null });
+                return;
+              }
             }
           }
         } catch (_) { /* -> snapshot quotidien */ }
@@ -162,7 +168,11 @@ export default function App() {
           const res = await fetch(`${import.meta.env.BASE_URL || '/'}data/market_latest.json`, { cache: 'no-cache' });
           if (res.ok) {
             const json = await res.json();
-            if (Array.isArray(json?.stocks) && json.stocks.length) { setMarketData(enrich(json.stocks)); return; }
+            if (Array.isArray(json?.stocks) && json.stocks.length) {
+              setMarketData(enrich(json.stocks));
+              setMarketMeta({ date: json.date, generatedAt: json.generated_at || null });
+              return;
+            }
           }
         } catch (_) { /* -> Supabase */ }
 
@@ -171,6 +181,7 @@ export default function App() {
         if (dateData?.[0]?.date) {
           const { data } = await supabase.from('full_stock_pro').select('*').eq('date', dateData[0].date);
           setMarketData(enrich(data));
+          setMarketMeta({ date: dateData[0].date, generatedAt: null });
         }
       } catch (err) { console.error(err); }
       finally { if (!silent) setLoadingMarket(false); }
@@ -619,6 +630,7 @@ export default function App() {
             globalSector={globalSector} setGlobalSector={setGlobalSector}
             resultCount={globallyFilteredMarket ? globallyFilteredMarket.length : 0}
             isDarkMode={isDarkMode} toggleTheme={toggleTheme}
+            marketMeta={marketMeta}
             user={user} handleLogout={handleLogout}
             
             marketData={marketData} loadingMarket={loadingMarket} 

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { UNIQUE_SECTORS } from '../utils/brvmConfig';
 import { FilterSelect, FilterInput } from './filters';
+import DataFreshness from './DataFreshness';
 
 export default function TopHeader({
   isSidebarOpen,
@@ -11,7 +12,8 @@ export default function TopHeader({
   setGlobalSector,
   resultCount,
   isDarkMode,
-  toggleTheme
+  toggleTheme,
+  marketMeta
 }) {
   // Options secteur (le "Tous" en tête) — mémoïsées
   const sectorOptions = useMemo(
@@ -35,6 +37,8 @@ export default function TopHeader({
       </div>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        {/* Fraîcheur des données — visible sur toutes les pages du Layout */}
+        <DataFreshness date={marketMeta?.date} generatedAt={marketMeta?.generatedAt} />
         {(searchQuery || globalSector !== 'All') && (
           <div style={{ color: 'var(--accent-blue)', fontSize: '0.9em', fontWeight: 'bold' }}>
             {resultCount} résultats
