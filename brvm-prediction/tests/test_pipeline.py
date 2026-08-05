@@ -19,6 +19,10 @@ from core.features_enhanced import _winsorize  # noqa: E402
 from core.gemini_reco import (  # noqa: E402
     _normalize_reco, _parse_json, compute_market_sentiment, _call_gemini_batch,
 )
+from core.scrape_dividendes import (  # noqa: E402
+    _parse_amount, _parse_fr_date, latest_dividend_per_symbol,
+)
+from core.export_artifacts import _inject_rendement  # noqa: E402
 
 
 # --------------------------------------------------------------------------- upsert
@@ -134,3 +138,41 @@ def test_call_gemini_batch_parse():
     out = _call_gemini_batch(_Client(), items, "Neutre")
     assert out["SGBC"]["recommandation"] == "Achat modéré"
     assert out["BOAC"]["recommandation"] == "Vente"
+
+
+# --------------------------------------------------------------------------- dividendes
+def test_parse_amount_fr():
+    assert _parse_amount("1 707,2 FCFA") == 1707.2
+    assert _parse_amount("420 FCFA") == 420.0
+    assert _parse_amount("768,16 FCFA") == 768.16
+    assert _parse_amount(None) is None
+
+
+def test_parse_fr_date():
+    assert _parse_fr_date("7 septembre 2026") == "2026-09-07"
+    assert _parse_fr_date("13 août 2026") == "2026-08-13"
+    assert _parse_fr_date("n/a") is None
+
+
+def test_latest_dividend_per_symbol():
+    df = pd.DataFrame({
+        "emetteur": ["SONATEL", "SONATEL", "ORANGE CI"],
+        "exercice": pd.array([2024, 2025, 2025], dtype="Int64"),
+        "montant_net": [1000.0, 1740.0, 800.0],
+    })
+    out = latest_dividend_per_symbol(df).set_index("symbole")
+    assert out.loc["SNTS", "dividende_net"] == 1740.0   # exercice le plus récent
+    assert out.loc["SNTS", "exercice"] == 2025
+    assert out.loc["ORAC", "dividende_net"] == 800.0
+
+
+def test_inject_rendement_plafond():
+    records = [
+        {"symbole": "AAA", "close": 8000},   # 400/8000 = 5%
+        {"symbole": "BBB", "close": 1000},   # 900/1000 = 90% -> anomalie -> None
+        {"symbole": "CCC", "close": 5000},   # pas de dividende -> None
+    ]
+    _inject_rendement(records, {"AAA": 400.0, "BBB": 900.0})
+    assert records[0]["rendement_dividende"] == 5.0
+    assert records[1]["rendement_dividende"] is None   # plafonné (>30%)
+    assert records[2]["rendement_dividende"] is None
