@@ -33,6 +33,33 @@ MARKET_PATH = os.path.join(OUTPUT_DIR, "market_latest.json")
 HISTORY_BUCKET = "market-history"
 HISTORY_COLUMNS = ["date", "close", "sma_20", "volume"]
 
+# Rendement dividende : au-delà de ce plafond -> anomalie (split, versement
+# exceptionnel : l'ancien dividende n'est plus comparable au cours) -> N/A.
+RENDEMENT_CAP = 30.0
+
+
+def _rendement_map() -> dict:
+    """{symbole: dividende_net} depuis dividendes_reference (best effort)."""
+    try:
+        rows = (supabase_client.table("dividendes_reference")
+                .select("symbole,dividende_net").execute().data) or []
+        return {r["symbole"]: r["dividende_net"] for r in rows if r.get("dividende_net")}
+    except Exception:  # noqa: BLE001 - table absente -> pas de rendement injecté
+        return {}
+
+
+def _inject_rendement(records, div_map):
+    """Ajoute rendement_dividende = dividende/cours*100 (plafonné ; anomalies -> None)."""
+    for r in records:
+        div = div_map.get(r.get("symbole"))
+        close = r.get("close")
+        rdt = None
+        if div and close and close > 0:
+            y = round(div / close * 100, 2)
+            rdt = y if 0 < y <= RENDEMENT_CAP else None
+        r["rendement_dividende"] = rdt
+    return records
+
 # Colonnes réellement utilisées par le frontend (on n'expose que le nécessaire).
 MARKET_COLUMNS = [
     "symbole", "nom", "date", "close", "variation", "volume",
@@ -107,6 +134,7 @@ def run_snapshot():
     for r in rows:
         if r.get("date") is not None:
             r["date"] = str(r["date"])[:10]
+    rows = _inject_rendement(rows, _rendement_map())  # rendement dividende
 
     payload = json.dumps(
         {"date": last, "count": len(rows), "stocks": rows,
@@ -140,6 +168,7 @@ def run_export(df_market):
     # Sérialisation propre : date -> 'YYYY-MM-DD', NaN -> null.
     day["date"] = day["date"].astype(str).str.slice(0, 10)
     records = day.replace({np.nan: None}).to_dict(orient="records")
+    records = _inject_rendement(records, _rendement_map())  # rendement dividende
 
     payload = {
         "date": str(last_date)[:10],

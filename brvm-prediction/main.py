@@ -39,7 +39,7 @@ def main():
     parser = argparse.ArgumentParser(description="Application BRVM-Quant MLOps")
     parser.add_argument(
         "--task", type=str, required=True,
-        choices=["train", "predict", "evaluate", "gemini", "export", "snapshot"],
+        choices=["train", "predict", "evaluate", "gemini", "export", "snapshot", "dividends"],
         help="La tâche à exécuter",
     )
     parser.add_argument(
@@ -61,6 +61,18 @@ def main():
             record_run("snapshot", "failed", {"error": str(exc)[:300]}, time.time() - start)
             raise
         record_run("snapshot", "success", {"result": n}, time.time() - start)
+        return
+
+    # Tâche LÉGÈRE 'dividends' : scraping web des dividendes -> Supabase (sans extraction).
+    if args.task == "dividends":
+        from core.scrape_dividendes import run_dividends
+        start = time.time()
+        try:
+            n = run_dividends()
+        except Exception as exc:  # noqa: BLE001
+            record_run("dividends", "failed", {"error": str(exc)[:300]}, time.time() - start)
+            raise
+        record_run("dividends", "success", {"result": n}, time.time() - start)
         return
 
     build_features, optimize_and_train_model, run_daily_inference = _load_engine(args.engine)
