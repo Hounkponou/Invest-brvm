@@ -40,13 +40,14 @@
    ========================================================================= */
 :root,
 [data-theme="dark"] {
-  --ipx-bg:        #0B0E14;
-  --ipx-surface:   #151A23;
-  --ipx-surface-2: #1E2433;
-  --ipx-border:    #2A2E39;
+  /* Ambiance « corporate indigo » (inspirée SGI) : bases indigo-navy + accent bleu-indigo */
+  --ipx-bg:        #0D1020;
+  --ipx-surface:   #161A2E;
+  --ipx-surface-2: #212648;
+  --ipx-border:    #2C3358;
   --ipx-fg:        #FFFFFF;
-  --ipx-muted:     #8B98A5;
-  --ipx-accent:    #2962FF;
+  --ipx-muted:     #94A1C2;
+  --ipx-accent:    #5B7CFA;
   --ipx-up:        #089981;
   --ipx-down:      #F23645;
   --ipx-warn:      #FFB300;
@@ -55,7 +56,7 @@
   --ipx-up-soft:     rgba(8, 153, 129, 0.15);
   --ipx-down-soft:   rgba(242, 54, 69, 0.15);
   --ipx-warn-soft:   rgba(255, 179, 0, 0.15);
-  --ipx-accent-soft: rgba(41, 98, 255, 0.15);
+  --ipx-accent-soft: rgba(91, 124, 250, 0.16);
 
   /* --- ALIAS HÉRITÉS -----------------------------------------------------
      Les anciennes pages (Dashboard, Screener, Portfolio, Simulator) et
@@ -69,7 +70,7 @@
   --text-main:         var(--ipx-fg);
   --text-muted:        var(--ipx-muted);
   --accent-blue:       var(--ipx-accent);
-  --accent-blue-hover: #1E53E5;
+  --accent-blue-hover: #4361EE;
   --accent-blue-soft:  var(--ipx-accent-soft);
   --up-color:          var(--ipx-up);
   --up-bg:             var(--ipx-up-soft);
@@ -85,13 +86,14 @@
    THÈME SOLAIRE (clair) — palette chaude, lumineuse, inspirant confiance
    ========================================================================= */
 [data-theme="solar"] {
-  --ipx-bg:        #FBF7EF;  /* blanc cassé chaud */
+  /* Ambiance « corporate indigo clair » (inspirée SGI) : blanc/indigo froid */
+  --ipx-bg:        #EEF1FA;  /* gris-indigo très clair */
   --ipx-surface:   #FFFFFF;
-  --ipx-surface-2: #F4ECDD;  /* léger sable */
-  --ipx-border:    #E7DCC8;
-  --ipx-fg:        #1A1D29;
-  --ipx-muted:     #6B7280;
-  --ipx-accent:    #2563EB;
+  --ipx-surface-2: #E5EAF7;  /* léger indigo */
+  --ipx-border:    #D8DFEF;
+  --ipx-fg:        #1B2038;  /* navy-indigo */
+  --ipx-muted:     #5C6788;
+  --ipx-accent:    #3D50C9;
   --ipx-up:        #0E9F6E;
   --ipx-down:      #E02424;
   --ipx-warn:      #D97706;
@@ -99,7 +101,7 @@
   --ipx-up-soft:     rgba(14, 159, 110, 0.12);
   --ipx-down-soft:   rgba(224, 36, 36, 0.10);
   --ipx-warn-soft:   rgba(217, 119, 6, 0.12);
-  --ipx-accent-soft: rgba(37, 99, 235, 0.10);
+  --ipx-accent-soft: rgba(61, 80, 201, 0.10);
 
   /* --- ALIAS HÉRITÉS (mode Solar) --------------------------------------- */
   --bg-base:           var(--ipx-bg);
@@ -109,7 +111,7 @@
   --text-main:         var(--ipx-fg);
   --text-muted:        var(--ipx-muted);
   --accent-blue:       var(--ipx-accent);
-  --accent-blue-hover: #1D4ED8;
+  --accent-blue-hover: #31429F;
   --accent-blue-soft:  var(--ipx-accent-soft);
   --up-color:          var(--ipx-up);
   --up-bg:             var(--ipx-up-soft);
