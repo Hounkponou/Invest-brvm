@@ -19,44 +19,46 @@ export default function Dashboard() {
       
       {marketStats ? (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-            
-            {/* CARTE 1 : SENTIMENT */}
-            <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', borderLeft: `4px solid ${marketStats.sentiment === 'Haussier' ? 'var(--up-color)' : (marketStats.sentiment === 'Baissier' ? 'var(--down-color)' : 'var(--text-muted)')}` }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9em', textTransform: 'uppercase' }}>Sentiment</div>
-              <div style={{ fontSize: '2em', fontWeight: 'bold', color: 'var(--text-main)', margin: '10px 0' }}>{marketStats.sentiment}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}><span style={{ color: 'var(--up-color)' }}>{marketStats.advances} Hausses</span> vs <span style={{ color: 'var(--down-color)' }}>{marketStats.declines} Baisses</span></div>
-            </div>
-
-            {/* CARTE 2 : VOLUME (Celle qui avait disparu) */}
-            <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', borderLeft: '4px solid var(--accent-blue)' }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9em', textTransform: 'uppercase' }}>Volume Échangé</div>
-              <div style={{ fontSize: '2em', fontWeight: 'bold', color: 'var(--text-main)', margin: '10px 0' }}>
-                {marketStats.totalVol.toLocaleString()}
+          {/* RÉSUMÉ : barre synthétique sobre (3 indicateurs séparés) */}
+          <div className="market-summary">
+            <div className="ms-cell">
+              <div className="ms-label">Sentiment</div>
+              <div
+                className="ms-value"
+                style={{ color: marketStats.sentiment === 'Haussier' ? 'var(--up-color)' : (marketStats.sentiment === 'Baissier' ? 'var(--down-color)' : 'var(--text-main)') }}
+              >
+                {marketStats.sentiment}
+              </div>
+              <div className="ms-sub">
+                <span style={{ color: 'var(--up-color)', fontWeight: 600 }}>{marketStats.advances} ▲</span>
+                {'  '}<span style={{ color: 'var(--down-color)', fontWeight: 600 }}>{marketStats.declines} ▼</span>
               </div>
             </div>
 
-            {/* CARTE 3 : ACTIONS ANALYSÉES (Celle qui avait disparu) */}
-            <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', borderLeft: '4px solid #9f7aea' }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9em', textTransform: 'uppercase' }}>Actions Analysées</div>
-              <div style={{ fontSize: '2em', fontWeight: 'bold', color: 'var(--text-main)', margin: '10px 0' }}>
-                {marketStats.count}
-              </div>
+            <div className="ms-cell">
+              <div className="ms-label">Volume échangé</div>
+              <div className="ms-value">{marketStats.totalVol.toLocaleString()}</div>
+              <div className="ms-sub">titres</div>
             </div>
 
+            <div className="ms-cell">
+              <div className="ms-label">Valeurs analysées</div>
+              <div className="ms-value">{marketStats.count}</div>
+              <div className="ms-sub">sur la cote</div>
+            </div>
           </div>
 
           {/* LISTE TOP ET FLOP */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', minWidth: '0' }}>
+          <div className="topflop-grid">
             <div>
-              <h3 style={{ color: 'var(--up-color)', margin: '0 0 15px 0' }}>Top {marketStats.top3.length}</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <h3 className="tf-title" style={{ color: 'var(--up-color)' }}>Top {marketStats.top3.length}</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {marketStats.top3.map(item => <StockCard key={item.symbole} item={item} onClick={setSelectedStock} />)}
               </div>
             </div>
             <div>
-              <h3 style={{ color: 'var(--down-color)', margin: '0 0 15px 0' }}>Flop {marketStats.flop3.length}</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <h3 className="tf-title" style={{ color: 'var(--down-color)' }}>Flop {marketStats.flop3.length}</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {marketStats.flop3.map(item => <StockCard key={item.symbole} item={item} onClick={setSelectedStock} />)}
               </div>
             </div>

@@ -33,6 +33,7 @@ export default function DataFreshness({ date, generatedAt }) {
 
   return (
     <div
+      className="data-freshness"
       title="Fraîcheur des données affichées (séance et dernière actualisation)"
       style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.78em', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}
     >
