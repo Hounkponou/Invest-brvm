@@ -139,6 +139,9 @@ tr:hover { background-color: var(--border-color); }
 /* Fond assombri du tiroir : invisible sur desktop, affiché sur mobile. */
 .sidebar-backdrop { display: none; }
 
+/* Barre d'onglets : présente uniquement sur mobile (voir media query). */
+.mobile-tabbar { display: none; }
+
 /* =========================================================================
    RESPONSIVE : Mobile et tablettes
    ========================================================================= */
@@ -188,6 +191,27 @@ tr:hover { background-color: var(--border-color); }
 
   /* Cartes pleine largeur */
   .stock-card { width: 100% !important; }
+
+  /* --- Barre d'onglets fixe (pattern app mobile) ------------------------ */
+  .mobile-tabbar {
+    display: flex;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 120;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border-color);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.18);
+  }
+  .mobile-tabbar .tab {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    text-decoration: none; color: var(--text-muted);
+    font-size: 0.64rem; font-weight: 600; letter-spacing: 0.01em;
+    padding: 6px 2px; border-radius: 8px; transition: color 0.15s;
+  }
+  .mobile-tabbar .tab.active { color: var(--accent-blue); }
+  .mobile-tabbar .tab span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+  /* Marge basse pour ne pas masquer le contenu derrière la barre d'onglets */
+  .view-area { padding-bottom: 84px !important; }
 
   /* --- Modale de détail d'action ---------------------------------------- */
   .stock-detail { padding: 16px !important; }
