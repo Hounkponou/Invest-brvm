@@ -43,7 +43,23 @@ h4 { font-size: 1rem; font-weight: 700; }
 .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
 /* HEADER (Recherche & Filtres) */
-.top-header { height: 70px; background-color: var(--bg-base); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+.top-header { background-color: var(--bg-panel); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 16px; padding: 12px 24px; position: sticky; top: 0; z-index: 10; }
+.th-menu { background: transparent; border: none; color: var(--text-main); cursor: pointer; display: grid; place-items: center; padding: 4px; flex: none; }
+.th-filters { display: flex; align-items: center; gap: 12px; flex: 0 1 auto; min-width: 0; }
+.th-meta { display: flex; align-items: center; gap: 16px; margin-left: auto; flex: none; }
+.th-theme { flex: none; }
+
+/* RÉSUMÉ MARCHÉ — barre synthétique sobre (3 indicateurs séparés) */
+.market-summary { display: flex; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; margin-bottom: 24px; }
+.ms-cell { flex: 1; padding: 18px 20px; min-width: 0; }
+.ms-cell + .ms-cell { border-left: 1px solid var(--border-color); }
+.ms-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 700; }
+.ms-value { font-size: 1.7rem; font-weight: 800; color: var(--text-main); margin-top: 6px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ms-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+/* TOP / FLOP */
+.topflop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; min-width: 0; }
+.tf-title { margin: 0 0 14px; font-size: 1.05rem; font-weight: 700; }
 .search-bar { background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 15px; border-radius: 6px; width: 300px; outline: none; transition: 0.2s; }
 .search-bar:focus { border-color: var(--accent-blue); }
 .time-filter { background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 15px; border-radius: 6px; outline: none; cursor: pointer; font-weight: bold; }
@@ -227,13 +243,28 @@ tbody tr:hover { background-color: var(--bg-hover); }
 
   .main-content { width: 100%; }
 
-  /* --- En-tête compact, champs de filtre flexibles ---------------------- */
-  .top-header { padding: 12px 15px !important; gap: 8px; }
-  .top-header > div { min-width: 0; }
-  .top-header > div:first-child { flex: 1; }
-  .top-header .filter-field { flex: 1; min-width: 0; }
-  .top-header input.filter-control,
-  .top-header select.filter-control { width: 100% !important; min-width: 0; }
+  /* --- En-tête sur DEUX lignes : (menu · fraîcheur · thème) puis filtres -- */
+  .top-header { padding: 10px 14px; gap: 10px; flex-wrap: wrap; }
+  .th-menu   { order: 1; }
+  .th-meta   { order: 2; margin-left: auto; gap: 10px; }
+  .th-theme  { order: 3; }
+  .th-filters { order: 4; flex-basis: 100%; gap: 10px; }
+  .th-filters .filter-field { flex: 1; min-width: 0; }
+  .th-filters input.filter-control,
+  .th-filters select.filter-control { width: 100% !important; min-width: 0; }
+
+  /* --- Résumé marché : cellules compactes, mêmes 3 colonnes -------------- */
+  .market-summary { border-radius: 12px; }
+  .ms-cell  { padding: 12px 10px; }
+  .ms-value { font-size: 1.15rem; }
+  .ms-label { font-size: 0.58rem; letter-spacing: 0.02em; }
+  .ms-sub   { font-size: 0.66rem; }
+
+  /* --- Top / Flop empilés verticalement (fin du débordement horizontal) -- */
+  .topflop-grid { grid-template-columns: 1fr; gap: 22px; }
+
+  /* Fraîcheur : un peu plus compacte sur mobile */
+  .data-freshness { font-size: 0.7em; }
 
   /* --- Plus de place pour le contenu ------------------------------------ */
   .view-area { padding: 16px !important; }

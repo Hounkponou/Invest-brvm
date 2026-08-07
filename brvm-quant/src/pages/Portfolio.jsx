@@ -14,12 +14,12 @@ export default function Portfolio() {
   return (
     <div>
       <div style={{ borderBottom: '2px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px' }}>
-        <h2 style={{ color: 'var(--text-main)', margin: 0 }}>💼 Portfolio Cloud & Risque</h2>
+        <h2 style={{ color: 'var(--text-main)', margin: 0 }}>Portefeuille & Risque</h2>
       </div>
 
       {/* FORMULAIRE D'AJOUT MANUEL */}
       <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', marginBottom: '30px', border: '1px solid var(--border-color)' }}>
-        <h3 style={{ margin: '0 0 15px 0', color: 'var(--text-main)' }}>➕ Ajouter une position</h3>
+        <h3 style={{ margin: '0 0 15px 0', color: 'var(--text-main)' }}>Ajouter une position</h3>
         <form onSubmit={handleManualAdd} style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 250px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <label style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>Rechercher l'action</label>
