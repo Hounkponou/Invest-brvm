@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopHeader from './TopHeader';
+import MobileTabBar from './MobileTabBar';
 
 // On utilise (props) pour tout attraper d'un coup
 export default function Layout(props) {
@@ -33,9 +34,12 @@ export default function Layout(props) {
         
         <div className="view-area" style={{ padding: '30px', flex: 1 }}>
           {/* MAGIE : On transfère toutes les props reçues aux pages (Dashboard, Screener, etc.) */}
-          <Outlet context={props} /> 
+          <Outlet context={props} />
         </div>
       </div>
+
+      {/* Barre d'onglets mobile (visible uniquement sur mobile, fixe en bas) */}
+      <MobileTabBar />
     </div>
   );
 }
