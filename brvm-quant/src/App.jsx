@@ -600,7 +600,7 @@ export default function App() {
 
           {/* ZONE DE GRAPHIQUES HISTORIQUES */}
           <div style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', minHeight: '350px' }}>
-            {loadingHistory ? <div style={{ textAlign: 'center', marginTop: '100px', color: 'var(--text-muted)' }}>Chargement...</div> : (
+            {loadingHistory ? <div className="skeleton" style={{ width: '100%', height: '100%', minHeight: '310px' }} /> : (
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={displayedHistory}>
                   <defs><linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--accent-blue)" stopOpacity={0.4}/><stop offset="95%" stopColor="var(--accent-blue)" stopOpacity={0}/></linearGradient></defs>

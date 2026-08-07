@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import StockCard from '../components/StockCard';
 import { FilterSelect, FilterInput, FilterPanel } from '../components/filters';
 import { getSector } from '../utils/brvmConfig';
+import EmptyState from '../components/EmptyState';
 
 // Options des filtres (déclarées hors composant = pas recréées à chaque rendu)
 const SORT_OPTIONS = [
@@ -72,8 +73,12 @@ export default function Screener() {
           />
         ))}
         {screenerData.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'var(--bg-panel)', borderRadius: '8px' }}>
-            Aucune action ne correspond à ces critères.
+          <div style={{ gridColumn: '1 / -1' }}>
+            <EmptyState
+              icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>}
+              title="Aucune valeur ne correspond"
+              message="Élargissez vos critères (valorisation, momentum ou fourchette de prix) pour afficher des résultats."
+            />
           </div>
         )}
       </div>
