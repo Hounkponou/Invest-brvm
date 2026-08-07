@@ -20,7 +20,7 @@ export default function Simulator() {
   return (
     <div>
       <h2 style={{ color: 'var(--text-main)', borderBottom: '2px solid var(--border-color)', paddingBottom: '10px' }}>
-        🧪 Backtest Lab & Strategies
+        Backtest Lab & Stratégies
       </h2>
       
       <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end', background: 'var(--bg-panel)', padding: '30px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '30px', flexWrap: 'wrap' }}>
@@ -97,7 +97,7 @@ export default function Simulator() {
               style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--up-color)', color: 'white', fontWeight: 'bold', cursor: 'pointer' }} 
               onClick={confirmPurchase}
             >
-              ✅ Valider l'Achat
+              Valider l'achat
             </button>
           </div>
         </div>

@@ -457,12 +457,12 @@ export default function App() {
       const profit = currentValue - group.totalInvested;
       const profitPct = (profit / group.totalInvested) * 100;
 
-      let conseil = { texte: '➖ Conserver', color: 'var(--text-muted)' };
+      let conseil = { texte: 'Conserver', color: 'var(--text-muted)' };
       if (liveData) {
-        if (liveData.score_ia >= 7) conseil = { texte: '🔥 Renforcer', color: 'var(--accent-blue)' };
-        else if (liveData.score_ia >= 5) conseil = { texte: '✅ Conserver', color: 'var(--up-color)' };
-        else if (liveData.score_ia === 4) conseil = { texte: '⚠️ Surveiller', color: 'var(--warn-color)' };
-        else conseil = { texte: '🚨 Vendre', color: 'var(--down-color)' };
+        if (liveData.score_ia >= 7) conseil = { texte: 'Renforcer', color: 'var(--accent-blue)' };
+        else if (liveData.score_ia >= 5) conseil = { texte: 'Conserver', color: 'var(--up-color)' };
+        else if (liveData.score_ia === 4) conseil = { texte: 'Surveiller', color: 'var(--warn-color)' };
+        else conseil = { texte: 'Vendre', color: 'var(--down-color)' };
       }
       return { ...group, cmp, currentPrice, currentValue, profit, profitPct, conseil };
     }).sort((a, b) => b.currentValue - a.currentValue);
@@ -549,17 +549,17 @@ export default function App() {
           <div style={{ marginBottom: '20px', background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', border: '1px solid var(--accent-blue)' }}>
             <div className="stock-detail-trading" style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
               <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🎯 Entrée Optimale</div>
+                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Entrée optimale</div>
                 <div style={{ fontSize: '1.8em', color: 'var(--up-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.entry?.toLocaleString()} F</div>
                 <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Prix conseillé</div>
               </div>
               <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🚀 Objectif</div>
+                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Objectif</div>
                 <div style={{ fontSize: '1.8em', color: 'var(--accent-blue)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.exit?.toLocaleString()} F</div>
                 <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Take Profit</div>
               </div>
               <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>🛡️ Stop-Loss</div>
+                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Stop-Loss</div>
                 <div style={{ fontSize: '1.8em', color: 'var(--down-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.stopLoss?.toLocaleString()} F</div>
                 <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Sécurité (-1.5x ATR)</div>
               </div>
