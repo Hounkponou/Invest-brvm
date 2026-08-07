@@ -2,6 +2,7 @@ import React from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { getSector, PIE_COLORS } from '../utils/brvmConfig';
+import EmptyState from '../components/EmptyState';
 
 export default function Portfolio() {
   const { 
@@ -49,9 +50,11 @@ export default function Portfolio() {
       </div>
 
       {groupedPortfolio.length === 0 || !portfolioAnalytics ? (
-        <div style={{ textAlign: 'center', padding: '50px', background: 'var(--bg-panel)', borderRadius: '10px', color: 'var(--text-muted)' }}>
-          Votre portefeuille est vide.
-        </div>
+        <EmptyState
+          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2" /><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3" /><path d="M16 12h5v3h-5a1.5 1.5 0 0 1 0-3z" /></svg>}
+          title="Votre portefeuille est vide"
+          message="Ajoutez une première position ci-dessus, ou constituez un portefeuille depuis le Backtest Lab."
+        />
       ) : (
         <>
           {/* ANALYTIQUES ET GRAPHIQUES */}

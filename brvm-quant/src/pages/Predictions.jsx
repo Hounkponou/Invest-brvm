@@ -138,8 +138,10 @@ export default function Predictions() {
 
       {/* ================= ÉTATS GLOBAUX ================= */}
       {loading && (
-        <div className="rounded-2xl border border-border bg-surface p-10 text-center text-muted">
-          Chargement des prédictions…
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="skeleton" style={{ height: 150, borderRadius: 16 }} />
+          ))}
         </div>
       )}
       {error && !loading && (
