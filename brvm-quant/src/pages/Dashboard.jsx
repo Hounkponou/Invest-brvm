@@ -49,13 +49,13 @@ export default function Dashboard() {
           {/* LISTE TOP ET FLOP */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', minWidth: '0' }}>
             <div>
-              <h3 style={{ color: 'var(--up-color)', margin: '0 0 15px 0' }}>🚀 Top {marketStats.top3.length}</h3>
+              <h3 style={{ color: 'var(--up-color)', margin: '0 0 15px 0' }}>Top {marketStats.top3.length}</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {marketStats.top3.map(item => <StockCard key={item.symbole} item={item} onClick={setSelectedStock} />)}
               </div>
             </div>
             <div>
-              <h3 style={{ color: 'var(--down-color)', margin: '0 0 15px 0' }}>⚠️ Flop {marketStats.flop3.length}</h3>
+              <h3 style={{ color: 'var(--down-color)', margin: '0 0 15px 0' }}>Flop {marketStats.flop3.length}</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {marketStats.flop3.map(item => <StockCard key={item.symbole} item={item} onClick={setSelectedStock} />)}
               </div>

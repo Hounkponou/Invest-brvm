@@ -81,7 +81,7 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
   };
 
   return (
-    <div style={{ minHeight: '100vh', overflowY: 'auto', background: 'var(--bg-base)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>
+    <div style={{ height: '100vh', overflowY: 'auto', background: 'var(--bg-base)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>
 
       {/* ============ HEADER ============ */}
       <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'color-mix(in srgb, var(--bg-base) 88%, transparent)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border-color)' }}>

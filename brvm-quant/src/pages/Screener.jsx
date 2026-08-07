@@ -6,10 +6,10 @@ import { getSector } from '../utils/brvmConfig';
 
 // Options des filtres (déclarées hors composant = pas recréées à chaque rendu)
 const SORT_OPTIONS = [
-  { value: 'score', label: '⭐ Score IA' },
-  { value: 'yield_desc', label: '💰 Rendement' },
-  { value: 'per_asc', label: '🟢 PER le plus bas' },
-  { value: 'rsi_asc', label: '📉 RSI le plus bas' },
+  { value: 'score', label: 'Score IA' },
+  { value: 'yield_desc', label: 'Rendement' },
+  { value: 'per_asc', label: 'PER le plus bas' },
+  { value: 'rsi_asc', label: 'RSI le plus bas' },
 ];
 const VAL_OPTIONS = [
   { value: 'All', label: 'Tout' },

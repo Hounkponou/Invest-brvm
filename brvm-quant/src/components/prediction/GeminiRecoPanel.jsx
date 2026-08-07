@@ -28,7 +28,7 @@ export default function GeminiRecoPanel({ gemini }) {
     <div className="mt-2 rounded-2xl border border-border bg-surface p-4 text-sm">
       {/* En-tête : marque Gemini + pastille de recommandation */}
       <div className="mb-1 flex flex-wrap items-center gap-2">
-        <span className="font-bold text-fg">✦ Avis Gemini</span>
+        <span className="font-bold text-fg">Avis Gemini</span>
         <span
           className="rounded-full px-2 py-0.5 text-xs font-bold"
           style={{ color: meta.color, backgroundColor: meta.bg }}
