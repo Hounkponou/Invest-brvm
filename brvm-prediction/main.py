@@ -90,7 +90,10 @@ def main():
             optimize_and_train_model(train_data, feature_cols)
 
         elif args.task == "predict":
-            run_daily_inference(today_data, feature_cols)
+            # Saisonnalité du mois courant (par titre) -> tilt ±1 du score /10.
+            from core.seasonality import compute_seasonality
+            season_map = compute_seasonality(df_raw)
+            run_daily_inference(today_data, feature_cols, season_map=season_map)
 
         elif args.task == "evaluate":
             # L'évaluation ne dépend pas du moteur : elle confronte les prédictions

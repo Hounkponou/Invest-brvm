@@ -23,6 +23,9 @@ from core.scrape_dividendes import (  # noqa: E402
     _parse_amount, _parse_fr_date, latest_dividend_per_symbol,
 )
 from core.export_artifacts import _inject_rendement  # noqa: E402
+from core.seasonality import (  # noqa: E402
+    compute_seasonality, add_seasonality_features, _build_entry,
+)
 
 
 # --------------------------------------------------------------------------- upsert
@@ -176,3 +179,54 @@ def test_inject_rendement_plafond():
     assert records[0]["rendement_dividende"] == 5.0
     assert records[1]["rendement_dividende"] is None   # plafonné (>30%)
     assert records[2]["rendement_dividende"] is None
+
+
+# --------------------------------------------------------------------------- saisonnalité
+def _synthetic_history():
+    """3 titres, 2018->2026, avec un vrai biais d'août pour AAAA (+) et BBBB (-)."""
+    rng = pd.bdate_range("2018-01-01", "2026-08-07")
+    rows = []
+    rs = np.random.RandomState(0)
+    for sym, boost in [("AAAA", +0.004), ("BBBB", -0.004), ("CCCC", 0.0)]:
+        price = 1000.0
+        for dt in rng:
+            seasonal = boost if dt.month == 8 else 0.0
+            price *= (1 + 0.0002 + seasonal + rs.normal(0, 0.008))
+            rows.append({"symbole": sym, "date": dt, "close": round(price, 2)})
+    return pd.DataFrame(rows)
+
+
+def test_compute_seasonality_directions():
+    res = compute_seasonality(_synthetic_history())
+    # Mois courant = août : AAAA doit ressortir haussier (+), BBBB baissier (-).
+    assert res["AAAA"]["season_dir"] == "haussier"
+    assert res["AAAA"]["tilt"] == 1
+    assert res["BBBB"]["season_dir"] == "baissier"
+    assert res["BBBB"]["tilt"] == -1
+    # Le libellé mentionne le mois (transparence pour l'utilisateur).
+    assert "août" in res["AAAA"]["season_label"]
+
+
+def test_seasonality_features_anti_fuite():
+    """La feature de saisonnalité ne doit voir QUE les années antérieures."""
+    df = _synthetic_history().sort_values(["symbole", "date"]).reset_index(drop=True)
+    cols = add_seasonality_features(df)
+    assert set(cols) == {"month_sin", "month_cos", "hist_month_fwd_ret", "hist_month_pos_rate"}
+
+    d = pd.to_datetime(df["date"])
+    aug = df[(df["symbole"] == "AAAA") & (d.dt.month == 8)].copy()
+    aug["year"] = pd.to_datetime(aug["date"]).dt.year
+    by_year = aug.groupby("year")["hist_month_fwd_ret"].first()
+    # 1re année d'août : aucune année antérieure -> NaN (preuve d'anti-fuite).
+    assert pd.isna(by_year.loc[by_year.index.min()])
+    # Années suivantes renseignées ET l'année COURANTE (2026, non réalisée) aussi.
+    assert by_year.loc[2026] == by_year.loc[2026]  # non-NaN
+    assert by_year.dropna().mean() > 0             # reflète bien le boost d'août
+
+
+def test_tilt_score_borne():
+    from scripts.upsert_predictions import _tilt_score
+    assert _tilt_score(0.62, +1) == 7   # base 6 + 1
+    assert _tilt_score(0.62, -1) == 5
+    assert _tilt_score(1.0, +1) == 10   # borné en haut
+    assert _tilt_score(0.0, -1) == 0    # borné en bas

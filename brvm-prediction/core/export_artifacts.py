@@ -27,6 +27,7 @@ from core.config import BASE_DIR, supabase_client
 # Dossier public de l'app Vite (servi tel quel par Vercel).
 OUTPUT_DIR = os.path.join(os.path.dirname(BASE_DIR), "brvm-quant", "public", "data")
 MARKET_PATH = os.path.join(OUTPUT_DIR, "market_latest.json")
+SEASON_PATH = os.path.join(OUTPUT_DIR, "seasonality.json")
 
 # Bucket Supabase Storage (public, servi par CDN) pour l'historique par action.
 # Trop volumineux pour un commit git quotidien -> stockage objet.
@@ -182,7 +183,36 @@ def run_export(df_market):
 
     print(f"[EXPORT] {len(records)} actions écrites dans {MARKET_PATH} (séance {payload['date']})")
 
+    # --- Saisonnalité du mois courant (par titre) -> artefact CDN ----------
+    _export_seasonality(df_market)
+
     # Historique complet par action -> Supabase Storage (CDN)
     _upload_history(df_market)
 
     return len(records)
+
+
+def _export_seasonality(df_market) -> int:
+    """Écrit public/data/seasonality.json : biais saisonnier par titre (mois courant).
+
+    Découplé de Gemini : calculé à partir du seul historique de cours. Sert au
+    front (badge + justification) et de trace du tilt appliqué au score /10.
+    """
+    from core.seasonality import compute_seasonality
+
+    season = compute_seasonality(df_market)
+    if not season:
+        print("[EXPORT] Saisonnalité indisponible (historique vide). Étape ignorée.")
+        return 0
+
+    month = next(iter(season.values())).get("month")
+    payload = {
+        "month": month,
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "seasonality": season,
+    }
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    with open(SEASON_PATH, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False)
+    print(f"[EXPORT] Saisonnalité de {len(season)} titres écrite dans {SEASON_PATH} (mois {month}).")
+    return len(season)

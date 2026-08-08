@@ -68,17 +68,32 @@ class BuildResult:
     skipped: list[str] = field(default_factory=list)
 
 
+def _tilt_score(proba: float, tilt: int) -> int:
+    """Score /10 = round(proba*10) ajusté du tilt de saisonnalité, borné [0,10].
+
+    `tilt ∈ {-1,0,+1}` (haussier/neutre/baissier saisonnier). Déterministe et
+    traçable : la justification affichée côté app mentionne cet ajustement.
+    """
+    base = proba_to_score_10(proba)
+    return int(max(0, min(10, base + int(tilt or 0))))
+
+
 def build_records(
     today_df,
     proba_col: str = "probabilite",
     include_optional: bool = True,
     model_version: str = "xgb-enhanced-v1",
+    season_map: dict | None = None,
 ) -> BuildResult:
     """Transforme le DataFrame d'inférence en lignes prêtes pour l'upsert.
 
     `today_df` doit contenir : date, symbole, close, et une colonne de probabilité.
     Toute ligne incomplète est ignorée (et signalée), jamais poussée à moitié.
+
+    `season_map` (optionnel) : {symbole: {"tilt": -1|0|1, ...}} issu de
+    core.seasonality.compute_seasonality -> ajuste le score /10 (± saisonnalité).
     """
+    season_map = season_map or {}
     result = BuildResult()
 
     for _, row in today_df.iterrows():
@@ -125,9 +140,10 @@ def build_records(
             "date_cible": target_str,
         }
         if include_optional:
+            tilt = season_map.get(str(symbole), {}).get("tilt", 0)
             record.update(
                 {
-                    "score_sur_10": proba_to_score_10(proba),
+                    "score_sur_10": _tilt_score(proba, tilt),
                     "horizon_jours": HORIZON_JOURS,
                     "modele_version": model_version,
                 }

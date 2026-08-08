@@ -21,13 +21,14 @@ import React, { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import usePredictions from "../hooks/usePredictions";
 import useGeminiRecos from "../hooks/useGeminiRecos";
+import useSeasonality from "../hooks/useSeasonality";
 import PredictionCard from "../components/prediction/PredictionCard";
 import BacktestPanel from "../components/prediction/BacktestPanel";
 import StatCard from "../components/prediction/StatCard";
 import GeminiRecoPanel from "../components/prediction/GeminiRecoPanel";
 import { FilterChips } from "../components/filters";
 import { getSector } from "../utils/brvmConfig";
-import { computeBacktest, getSignal } from "../utils/predictionHelpers";
+import { computeBacktest, getSignal, getScore10, getGeminiScore10 } from "../utils/predictionHelpers";
 
 // Options de filtre sur la force du signal
 const FILTERS = [
@@ -39,14 +40,24 @@ const FILTERS = [
 export default function Predictions() {
   // Filtres GLOBAUX partagés (recherche + secteur), fournis par le Layout.
   // On sécurise avec des valeurs par défaut au cas où le contexte est absent.
-  const { searchQuery = "", globalSector = "All" } = useOutletContext() || {};
+  const { searchQuery = "", globalSector = "All", marketData = [] } = useOutletContext() || {};
 
   const { live, closed, latestDate, loading, error, refetch } = usePredictions();
   // Recommandations Gemini du jour, indexées par symbole (dégrade proprement si absent).
   const { bySymbol: geminiBySymbol } = useGeminiRecos();
+  // Saisonnalité du mois par titre (facteur quantitatif nouveau, sans Gemini).
+  const { bySymbol: seasonBySymbol } = useSeasonality();
 
   const [tab, setTab] = useState("signals"); // "signals" | "challenge"
   const [filter, setFilter] = useState("all"); // force du signal (filtre local)
+  const [sortMode, setSortMode] = useState("modele"); // "modele" | "ia"
+
+  // Accès O(1) aux fondamentaux marché par symbole (justification du score).
+  const marketBySymbol = useMemo(() => {
+    const m = {};
+    (marketData || []).forEach((d) => { if (d?.symbole) m[d.symbole] = d; });
+    return m;
+  }, [marketData]);
 
   // Backtest dérivé des prédictions clôturées (mémoïsé)
   const backtest = useMemo(() => computeBacktest(closed), [closed]);
@@ -67,6 +78,25 @@ export default function Predictions() {
       return true;
     });
   }, [live, filter, searchQuery, globalSector]);
+
+  // Tri selon le FILTRE choisi : « Modèle » (score quantitatif) ou « IA » (avis
+  // Gemini). En mode IA, les titres sans avis passent en fin de liste.
+  const sortedLive = useMemo(() => {
+    const rows = [...filteredLive];
+    if (sortMode === "ia") {
+      rows.sort((a, b) => {
+        const sa = getGeminiScore10(geminiBySymbol[a.symbole]);
+        const sb = getGeminiScore10(geminiBySymbol[b.symbole]);
+        return (sb ?? -1) - (sa ?? -1);
+      });
+    } else {
+      rows.sort((a, b) => getScore10(b) - getScore10(a));
+    }
+    return rows;
+  }, [filteredLive, sortMode, geminiBySymbol]);
+
+  // Y a-t-il au moins un avis Gemini disponible ? (sinon, note en mode « Filtre IA »)
+  const hasGemini = useMemo(() => Object.keys(geminiBySymbol || {}).length > 0, [geminiBySymbol]);
 
   // Compteurs pour les KPI (sur l'ensemble du jour, avant filtre local)
   const counts = useMemo(() => {
@@ -156,20 +186,53 @@ export default function Predictions() {
       {/* ================= CONTENU : SIGNAUX ================= */}
       {!loading && !error && tab === "signals" && (
         <>
-          {/* Filtres de force du signal (local, en plus des filtres globaux) —
-              composant partagé FilterChips = même apparence que le reste de l'app */}
-          <FilterChips className="mb-4" options={FILTERS} value={filter} onChange={setFilter} />
+          {/* Barre de contrôle : tri Modèle/IA + filtres de force du signal */}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex rounded-full border border-border bg-surface p-1">
+              {[
+                { key: "modele", label: "Filtre Modèle" },
+                { key: "ia", label: "Filtre IA" },
+              ].map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => setSortMode(m.key)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                    sortMode === m.key ? "text-fg" : "text-muted hover:text-fg"
+                  }`}
+                  style={sortMode === m.key ? { backgroundColor: "var(--ipx-surface-2)" } : undefined}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <FilterChips options={FILTERS} value={filter} onChange={setFilter} />
+          </div>
 
-          {filteredLive.length === 0 ? (
+          {sortMode === "ia" && !hasGemini && (
+            <div className="mb-4 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted">
+              Les avis de l'IA (Gemini) sont indisponibles pour l'instant — le tri « Filtre IA »
+              reprend l'ordre du modèle. Le classement redeviendra qualitatif dès que les
+              recommandations seront régénérées.
+            </div>
+          )}
+
+          {sortedLive.length === 0 ? (
             <div className="rounded-2xl border border-border bg-surface p-10 text-center text-muted">
               Aucun signal ne correspond à ces filtres.
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {filteredLive.map((pred) => (
-                <div key={`${pred.date_prediction}-${pred.symbole}`} className="flex flex-col">
-                  <PredictionCard pred={pred} sector={getSector(pred.symbole)} />
-                  {/* Avis Gemini + contrôle croisé (rendu seulement s'il existe) */}
+              {sortedLive.map((pred) => (
+                <div key={`${pred.date_prediction}-${pred.symbole}`} className="flex flex-col gap-2">
+                  <PredictionCard
+                    pred={pred}
+                    sector={getSector(pred.symbole)}
+                    market={marketBySymbol[pred.symbole]}
+                    gemini={geminiBySymbol[pred.symbole]}
+                    season={seasonBySymbol[pred.symbole]}
+                  />
+                  {/* Avis Gemini textuel + contrôle croisé (rendu seulement s'il existe) */}
                   <GeminiRecoPanel gemini={geminiBySymbol[pred.symbole]} />
                 </div>
               ))}
