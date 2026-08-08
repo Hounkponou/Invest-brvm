@@ -75,7 +75,7 @@ export default function BacktestPanel({ backtest }) {
             Ce que le modèle avait annoncé, confronté au résultat réel à l'horizon.
           </p>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-sm tabular-nums">
               <thead>
                 <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted">
                   <th className="py-2 pr-3 font-semibold">Titre</th>

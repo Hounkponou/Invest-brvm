@@ -107,17 +107,60 @@ export function getFinalDirective(pred, gemini) {
   return { label, ...meta, diverge };
 }
 
-/** Prévision explicite : tendance + objectif (%) + probabilité, à l'horizon. */
-export function getForecast(pred, horizonDays = 15, targetReturn = 3.5) {
+/** Sens de la directive : +1 (ACHAT), -1 (VENTE), 0 (CONSERVER). */
+function directiveDir(directive) {
+  if (directive?.label === "ACHAT") return 1;
+  if (directive?.label === "VENTE") return -1;
+  return 0;
+}
+
+/**
+ * Prévision explicite, COHÉRENTE avec la directive : la tendance affichée suit
+ * la directive finale (fini « CONSERVER + tendance haussière »).
+ *   - ACHAT    -> tendance haussière ;
+ *   - VENTE    -> tendance baissière ;
+ *   - CONSERVER-> tendance neutre.
+ */
+export function getForecast(pred, directive, horizonDays = 15, targetReturn = 3.5) {
   const p = Number(pred?.probabilite_modele ?? 0);
-  const haussier = p >= 0.5;
+  const dir = directiveDir(directive);
+  if (dir > 0)
+    return { trend: "haussière", color: "var(--ipx-up)", arrow: "▲",
+             objective: `+${targetReturn.toFixed(1)} %`, probaPct: Math.round(p * 100), horizonDays };
+  if (dir < 0)
+    return { trend: "baissière", color: "var(--ipx-down)", arrow: "▼",
+             objective: `−${targetReturn.toFixed(1)} %`, probaPct: Math.round(p * 100), horizonDays };
+  return { trend: "neutre", color: "var(--ipx-muted)", arrow: "■",
+           objective: "≈ stable", probaPct: Math.round(p * 100), horizonDays };
+}
+
+/**
+ * COURS CIBLE chiffré (valeur de l'action prévue) + fourchette basse/haute.
+ * Transparent : le point central est le niveau-objectif du modèle
+ * (prix × (1 ± objectif)) ; la fourchette est une amplitude ~1σ sur l'horizon,
+ * estimée depuis l'ATR (volatilité) ou, à défaut, ±3 %. Cohérent avec la
+ * directive : ACHAT vise plus haut, VENTE plus bas, CONSERVER reste autour du prix.
+ */
+export function getTargetPrice(pred, market, directive, horizonDays = 15, targetReturn = 3.5) {
+  const entry = Number(pred?.prix_initial);
+  if (!entry || entry <= 0) return null;
+
+  const dir = directiveDir(directive);
+  const central = entry * (1 + (dir * targetReturn) / 100);
+
+  // Amplitude d'incertitude : ATR journalier projeté sur l'horizon (~écart-type).
+  const atr = Number(market?.atr_14);
+  const band = atr > 0 ? atr * Math.sqrt(horizonDays) : central * 0.03;
+
+  const low = Math.max(0, Math.round(central - band));
+  const high = Math.round(central + band);
   return {
-    trend: haussier ? "haussière" : "baissière",
-    color: haussier ? "var(--ipx-up)" : "var(--ipx-down)",
-    arrow: haussier ? "▲" : "▼",
-    objective: `${haussier ? "+" : "−"}${targetReturn.toFixed(1)} %`,
-    probaPct: Math.round(p * 100),
-    horizonDays,
+    entry: Math.round(entry),
+    central: Math.round(central),
+    low,
+    high,
+    dir,
+    deltaPct: ((central - entry) / entry) * 100,
   };
 }
 
