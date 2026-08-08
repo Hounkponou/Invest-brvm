@@ -16,7 +16,7 @@ jobs:
       - name: Contrôle de fraîcheur des artefacts en production
         working-directory: ./brvm-prediction
         env:
-          SITE_URL: https://invest-brvm.vercel.app
+          SITE_URL: https://invest-pro-ruby.vercel.app
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           MAX_STALE_DAYS: '5'
         run: python scripts/health_check.py   # exit != 0 -> job rouge -> alerte mail

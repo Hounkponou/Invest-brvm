@@ -17,7 +17,7 @@ Contrôles :
 
 Aucune dépendance externe (stdlib uniquement) -> workflow rapide et robuste.
 Config par variables d'environnement :
-  SITE_URL         (défaut https://invest-brvm.vercel.app)
+  SITE_URL         (défaut https://invest-pro-ruby.vercel.app)
   SUPABASE_URL     (pour l'URL publique du bucket d'historique ; sinon test ignoré)
   MAX_STALE_DAYS   (défaut 5 ; tolère les week-ends/fériés)
   SAMPLE_SYMBOL    (défaut SGBC)
@@ -29,7 +29,7 @@ import sys
 import urllib.request
 from datetime import date, datetime, timezone
 
-SITE_URL = os.getenv("SITE_URL", "https://invest-brvm.vercel.app").rstrip("/")
+SITE_URL = os.getenv("SITE_URL", "https://invest-pro-ruby.vercel.app").rstrip("/")
 SUPABASE_URL = (os.getenv("SUPABASE_URL") or "").rstrip("/")
 MAX_STALE_DAYS = int(os.getenv("MAX_STALE_DAYS", "5"))
 SAMPLE_SYMBOL = os.getenv("SAMPLE_SYMBOL", "SGBC")
