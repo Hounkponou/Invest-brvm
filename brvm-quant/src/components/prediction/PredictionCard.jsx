@@ -23,14 +23,17 @@ import {
   getScore10,
   getFinalDirective,
   getForecast,
+  getTargetPrice,
   buildScoreJustification,
   formatFcfa,
 } from "../../utils/predictionHelpers";
 
 export default function PredictionCard({ pred, sector, market, gemini, season, onClick }) {
+  const horizon = pred?.horizon_jours || 15;
   const score = getScore10(pred);
   const directive = getFinalDirective(pred, gemini);
-  const forecast = getForecast(pred, pred?.horizon_jours || 15);
+  const forecast = getForecast(pred, directive, horizon);
+  const target = getTargetPrice(pred, market, directive, horizon);
   const drivers = buildScoreJustification(pred, market, season);
 
   return (
@@ -38,7 +41,7 @@ export default function PredictionCard({ pred, sector, market, gemini, season, o
       type="button"
       onClick={onClick ? () => onClick(pred) : undefined}
       className="group flex w-full flex-col gap-4 rounded-2xl border border-border bg-surface
-                 p-5 text-left transition hover:border-accent hover:shadow-lg
+                 p-5 text-left tabular-nums transition hover:border-accent hover:shadow-lg
                  focus:outline-none focus:ring-2 focus:ring-accent"
     >
       {/* 1. Identité + jauge Score Modèle */}
@@ -82,6 +85,17 @@ export default function PredictionCard({ pred, sector, market, gemini, season, o
             <span className="ml-1" style={{ color: "var(--ipx-warn)" }}>· avis IA divergent</span>
           )}
         </div>
+
+        {/* Cours cible chiffré + fourchette (valeur de l'action prévue) */}
+        {target && (
+          <div className="mt-2 border-t border-border/50 pt-2 text-xs text-muted">
+            Cours cible{" "}
+            <span className="font-bold" style={{ color: directive.color }}>
+              {formatFcfa(target.central)}
+            </span>{" "}
+            <span>(fourchette {formatFcfa(target.low)} – {formatFcfa(target.high)})</span>
+          </div>
+        )}
       </div>
 
       {/* 3. Barre de probabilité */}
