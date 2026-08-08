@@ -57,8 +57,12 @@ def _load_calibrator():
     return lambda p: p
 
 
-def run_daily_inference(today_data, features):
-    """Génère les prédictions du jour, calibrées, et les pousse dans Supabase."""
+def run_daily_inference(today_data, features, season_map=None):
+    """Génère les prédictions du jour, calibrées, et les pousse dans Supabase.
+
+    `season_map` (optionnel) : saisonnalité par titre (compute_seasonality) qui
+    applique un tilt ±1 au score /10 lors de l'écriture (transparence conservée).
+    """
     print("[PREDICT+] Inférence calibrée du jour...")
 
     # On ne garde que la dernière observation par titre
@@ -76,6 +80,6 @@ def run_daily_inference(today_data, features):
     raw_proba = model.predict_proba(X)[:, 1]
     today_data["probabilite"] = calibrate(raw_proba)
 
-    # Écriture robuste (score/10 + signal dérivés dans le script)
-    n = push_predictions(today_data, proba_col="probabilite")
+    # Écriture robuste (score/10 + signal dérivés dans le script ; tilt saisonnalité)
+    n = push_predictions(today_data, proba_col="probabilite", season_map=season_map)
     print(f"[PREDICT+] {n} prédictions calibrées écrites dans Supabase.")

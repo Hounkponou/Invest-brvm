@@ -23,7 +23,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import StatCard from "./StatCard";
-import { formatPct, getPnlColor } from "../../utils/predictionHelpers";
+import { formatPct, getPnlColor, getScoreColor } from "../../utils/predictionHelpers";
 
 /** Style commun des tooltips Recharts, aligné sur le thème. */
 const tooltipStyle = {
@@ -34,7 +34,7 @@ const tooltipStyle = {
 };
 
 export default function BacktestPanel({ backtest }) {
-  const { total, hitRate, avgReturn, series, monthly } = backtest;
+  const { total, hitRate, avgReturn, series, monthly, recent = [] } = backtest;
 
   // Cas « pas encore de résultats » : message pédagogique, pas d'écran vide
   if (!total) {
@@ -66,6 +66,59 @@ export default function BacktestPanel({ backtest }) {
           hint="Performance moyenne à terme"
         />
       </div>
+
+      {/* --- Transparence : ce que le modèle avait PRÉDIT vs le RÉEL --- */}
+      {recent.length > 0 && (
+        <div className="rounded-2xl border border-border bg-surface p-4">
+          <h4 className="mb-1 text-sm font-bold text-fg">Modèle vs réel</h4>
+          <p className="mb-3 text-xs text-muted">
+            Ce que le modèle avait annoncé, confronté au résultat réel à l'horizon.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted">
+                  <th className="py-2 pr-3 font-semibold">Titre</th>
+                  <th className="py-2 pr-3 font-semibold">Échéance</th>
+                  <th className="py-2 pr-3 font-semibold">Prédit</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Réel</th>
+                  <th className="py-2 text-right font-semibold">Verdict</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.map((r, i) => (
+                  <tr key={`${r.symbole}-${r.date}-${i}`} className="border-b border-border/60 last:border-none">
+                    <td className="py-2 pr-3 font-bold text-fg">{r.symbole}</td>
+                    <td className="py-2 pr-3 text-muted">{String(r.date).slice(0, 10)}</td>
+                    <td className="py-2 pr-3">
+                      {r.score != null && (
+                        <span className="font-semibold" style={{ color: getScoreColor(r.score) }}>{r.score}/10</span>
+                      )}
+                      {r.proba != null && (
+                        <span className="text-muted"> · {Math.round(r.proba * 100)} %</span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-right font-semibold" style={{ color: getPnlColor(r.real) }}>
+                      {formatPct(r.real)}
+                    </td>
+                    <td className="py-2 text-right">
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+                        style={{
+                          color: r.success ? "var(--ipx-up)" : "var(--ipx-down)",
+                          backgroundColor: r.success ? "var(--ipx-up-soft)" : "var(--ipx-down-soft)",
+                        }}
+                      >
+                        {r.success ? "Réussi" : "Manqué"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* --- Courbe du taux de réussite cumulé --- */}
       <div className="rounded-2xl border border-border bg-surface p-4">

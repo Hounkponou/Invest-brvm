@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from core.config import HORIZON_JOURS, TARGET_RETURN
+from core.seasonality import add_seasonality_features
 
 
 # ---------------------------------------------------------------------------
@@ -278,6 +279,7 @@ def build_features(df: pd.DataFrame):
     feature_cols += _add_momentum_features(df, train_mask)
     feature_cols += _add_cross_sectional_features(df)   # dépend des blocs précédents
     feature_cols += _add_market_context_features(df)    # dépend de dist_sma20 / ret_21d
+    feature_cols += add_seasonality_features(df)        # saisonnalité (anti-fuite strict)
 
     # On réintègre quelques signaux bruts déjà présents et utiles tels quels
     for raw in ("per", "rsi_14", "score_ia", "volume", "close"):

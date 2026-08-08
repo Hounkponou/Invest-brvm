@@ -45,6 +45,121 @@ export function getScoreColor(score) {
   return "var(--ipx-down)";
 }
 
+// ===========================================================================
+// SAISONNALITÉ, DUEL MODÈLE vs IA, DIRECTIVE & JUSTIFICATION (refonte signaux)
+// ===========================================================================
+
+/** Métadonnées visuelles d'un biais saisonnier (haussier / baissier / neutre). */
+export function getSeasonMeta(season) {
+  const dir = season?.season_dir || "neutre";
+  if (dir === "haussier")
+    return { dir, color: "var(--ipx-up)", bg: "var(--ipx-up-soft)", arrow: "▲", label: "Saisonnalité favorable" };
+  if (dir === "baissier")
+    return { dir, color: "var(--ipx-down)", bg: "var(--ipx-down-soft)", arrow: "▼", label: "Saisonnalité défavorable" };
+  return { dir, color: "var(--ipx-muted)", bg: "var(--ipx-surface-2)", arrow: "■", label: "Saisonnalité neutre" };
+}
+
+/** Score /10 QUALITATIF dérivé de la recommandation Gemini (null si absente). */
+export function getGeminiScore10(gemini) {
+  if (!gemini || !gemini.recommandation) return null;
+  switch (gemini.recommandation) {
+    case "Achat fort": return 9;
+    case "Achat modéré": return 7;
+    case "Conservation": return 5;
+    case "Vente": return 2;
+    default: return 5;
+  }
+}
+
+/** Verdict du duel Modèle vs IA : accord, divergence, ou IA indisponible. */
+export function getDuelVerdict(modelScore, gemini) {
+  const ia = getGeminiScore10(gemini);
+  if (ia == null) return { state: "na", label: "Avis IA indisponible", color: "var(--ipx-muted)" };
+  const gap = Math.abs(modelScore - ia);
+  if (gap <= 1) return { state: "accord", label: "Modèle et IA d'accord", color: "var(--ipx-up)" };
+  const who = modelScore > ia ? "Le modèle est plus optimiste que l'IA" : "L'IA est plus optimiste que le modèle";
+  return { state: "divergence", label: `Divergence — ${who}`, color: "var(--ipx-warn)" };
+}
+
+/**
+ * Directive FINALE ultra-claire (ACHAT / CONSERVER / VENTE), réconciliant le
+ * signal du modèle et l'avis Gemini quand il est disponible. Transparente :
+ * `diverge` indique un désaccord, `source` d'où vient la directive.
+ */
+export function getFinalDirective(pred, gemini) {
+  const signal = getSignal(pred);
+  const modelBull = signal === "Achat Fort" ? 2 : signal === "Achat Modéré" ? 1 : 0;
+  const iaReco = gemini?.recommandation;
+  const iaBull = iaReco === "Achat fort" ? 2 : iaReco === "Achat modéré" ? 1
+    : iaReco === "Vente" ? -1 : iaReco === "Conservation" ? 0 : null;
+
+  // Modèle seul haussier -> ACHAT ; sinon CONSERVER. L'IA peut faire basculer en VENTE.
+  let label = modelBull >= 1 ? "ACHAT" : "CONSERVER";
+  if (iaBull === -1 && modelBull === 0) label = "VENTE";
+  const diverge = iaBull != null && ((modelBull >= 1) !== (iaBull >= 1));
+
+  const meta = label === "ACHAT"
+    ? { color: "var(--ipx-up)", bg: "var(--ipx-up-soft)" }
+    : label === "VENTE"
+      ? { color: "var(--ipx-down)", bg: "var(--ipx-down-soft)" }
+      : { color: "var(--ipx-muted)", bg: "var(--ipx-surface-2)" };
+
+  return { label, ...meta, diverge };
+}
+
+/** Prévision explicite : tendance + objectif (%) + probabilité, à l'horizon. */
+export function getForecast(pred, horizonDays = 15, targetReturn = 3.5) {
+  const p = Number(pred?.probabilite_modele ?? 0);
+  const haussier = p >= 0.5;
+  return {
+    trend: haussier ? "haussière" : "baissière",
+    color: haussier ? "var(--ipx-up)" : "var(--ipx-down)",
+    arrow: haussier ? "▲" : "▼",
+    objective: `${haussier ? "+" : "−"}${targetReturn.toFixed(1)} %`,
+    probaPct: Math.round(p * 100),
+    horizonDays,
+  };
+}
+
+/**
+ * Justification LISIBLE du score : liste de « moteurs » (+/−) construite à partir
+ * des fondamentaux déjà disponibles (marché) et de la saisonnalité. Sans SHAP :
+ * transparent et honnête sur ce qui pousse ou freine le score.
+ * Retour : [{ text, sign: '+'|'−' }]
+ */
+export function buildScoreJustification(pred, market, season) {
+  const drivers = [];
+
+  // Momentum relatif (via variation récente si dispo)
+  const varPct = Number(market?.variation);
+  if (!Number.isNaN(varPct)) {
+    if (varPct > 0) drivers.push({ text: "momentum récent positif", sign: "+" });
+    else if (varPct < 0) drivers.push({ text: "momentum récent négatif", sign: "−" });
+  }
+
+  // RSI : survente (favorable au rebond) / surachat (frein)
+  const rsi = Number(market?.rsi_14);
+  if (!Number.isNaN(rsi) && rsi > 0) {
+    if (rsi < 35) drivers.push({ text: "RSI en zone de survente (potentiel de rebond)", sign: "+" });
+    else if (rsi > 70) drivers.push({ text: "RSI en zone de surachat", sign: "−" });
+  }
+
+  // Valorisation
+  const valo = market?.statut_valorisation;
+  if (valo && /sous/i.test(valo)) drivers.push({ text: "valorisation attractive (sous-évaluée)", sign: "+" });
+  else if (valo && /sur/i.test(valo)) drivers.push({ text: "valorisation tendue (surévaluée)", sign: "−" });
+
+  // Rendement dividende élevé
+  const rdt = Number(market?.rendement_dividende);
+  if (!Number.isNaN(rdt) && rdt >= 7) drivers.push({ text: `rendement du dividende élevé (${rdt} %)`, sign: "+" });
+
+  // Saisonnalité (le facteur nouveau)
+  if (season?.season_dir === "haussier") drivers.push({ text: "saisonnalité du mois favorable", sign: "+" });
+  else if (season?.season_dir === "baissier") drivers.push({ text: "saisonnalité du mois défavorable", sign: "−" });
+
+  return drivers;
+}
+
 /** Couleur d'un écart de performance (backtest) selon son signe. */
 export function getPnlColor(pct) {
   if (pct > 0) return "var(--ipx-up)";
@@ -76,7 +191,7 @@ export function computeBacktest(closedPreds) {
 
   const total = rows.length;
   if (total === 0) {
-    return { total: 0, wins: 0, hitRate: 0, avgReturn: 0, series: [], monthly: [] };
+    return { total: 0, wins: 0, hitRate: 0, avgReturn: 0, series: [], monthly: [], recent: [] };
   }
 
   let wins = 0;
@@ -107,6 +222,21 @@ export function computeBacktest(closedPreds) {
     else monthlyMap[month].fail += 1;
   });
 
+  // Tableau d'écart MODÈLE vs RÉEL : les N dernières prédictions clôturées, du
+  // plus récent au plus ancien (prédit -> réel -> réussite).
+  const recent = rows
+    .slice(-24)
+    .reverse()
+    .map((p) => ({
+      symbole: p.symbole,
+      date: p.date_cible,
+      signal: p.signal_emis || null,
+      proba: p.probabilite_modele != null ? Number(p.probabilite_modele) : null,
+      score: p.score_sur_10 != null ? Number(p.score_sur_10) : null,
+      real: Number(p.ecart_pourcentage),
+      success: p.statut_reussite === true || p.statut_reussite === "true",
+    }));
+
   return {
     total,
     wins,
@@ -114,5 +244,6 @@ export function computeBacktest(closedPreds) {
     avgReturn: sumReturn / total,
     series,
     monthly: Object.values(monthlyMap),
+    recent,
   };
 }

@@ -55,7 +55,7 @@ export function usePredictions({ closedLimit = 500 } = {}) {
       // --- 3. Prédictions clôturées (pour le backtest) -----------------
       const { data: closedRows, error: cErr } = await supabase
         .from(TABLE)
-        .select("date_prediction, date_cible, symbole, ecart_pourcentage, statut_reussite, signal_emis")
+        .select("date_prediction, date_cible, symbole, ecart_pourcentage, statut_reussite, signal_emis, probabilite_modele, score_sur_10")
         .not("prix_reel_a_terme", "is", null)
         .order("date_cible", { ascending: false })
         .limit(closedLimit);
