@@ -84,12 +84,22 @@ def main():
     try:
         # Extraction commune à toutes les tâches
         df_raw = fetch_historical_data()
-        train_data, today_data, feature_cols = build_features(df_raw)
 
         if args.task == "train":
-            optimize_and_train_model(train_data, feature_cols)
+            # Un modèle PAR HORIZON : les labels/masques dépendent de l'horizon,
+            # d'où un build_features dédié à chaque cible (les features, elles,
+            # sont identiques). Sauvegarde suffixée par la clé d'horizon.
+            from core.config import HORIZONS
+            for h in HORIZONS:
+                train_data, _, feature_cols = build_features(df_raw, h["days"], h["target"])
+                optimize_and_train_model(
+                    train_data, feature_cols, suffix=h["key"], horizon_days=h["days"]
+                )
 
         elif args.task == "predict":
+            # Les features sont indépendantes de l'horizon -> un seul build ; c'est
+            # run_daily_inference qui applique les 3 modèles (un par horizon).
+            _, today_data, feature_cols = build_features(df_raw)
             # Saisonnalité du mois courant (par titre) -> tilt ±1 du score /10.
             from core.seasonality import compute_seasonality
             season_map = compute_seasonality(df_raw)

@@ -1,0 +1,32 @@
+{
+  "pr_auc_cv": 0.46847534605356433,
+  "best_params": {
+    "subsample": 0.8,
+    "scale_pos_weight": 7,
+    "reg_lambda": 3.0,
+    "n_estimators": 400,
+    "min_child_weight": 1,
+    "max_depth": 5,
+    "learning_rate": 0.05,
+    "colsample_bytree": 0.8
+  },
+  "n_train": 105575,
+  "n_features": 31,
+  "top_features": {
+    "market_breadth": 0.0780215784907341,
+    "month_cos": 0.0763634443283081,
+    "month_sin": 0.055131468921899796,
+    "dist_high_52w": 0.04944835975766182,
+    "rank_per": 0.04810897633433342,
+    "close": 0.045598115772008896,
+    "hist_month_pos_rate": 0.04557659849524498,
+    "per": 0.043368346989154816,
+    "rank_amihud": 0.04089634492993355,
+    "dist_low_52w": 0.03779256343841553,
+    "amihud_21": 0.03716590255498886,
+    "ret_63d": 0.03424739092588425,
+    "hist_month_fwd_ret": 0.03356608375906944,
+    "volatility_63": 0.03223013877868652,
+    "score_ia": 0.030866069719195366
+  }
+}

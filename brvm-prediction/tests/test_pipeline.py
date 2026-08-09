@@ -246,3 +246,40 @@ def test_relative_signal_rang_et_plancher():
     assert relative_signal(0.70, p90, p75) == "Achat Modéré"   # entre 75e et 90e
     assert relative_signal(0.62, p90, p75) == "Conserver"      # sous le 75e centile
     assert relative_signal(0.40, p90, p75) == "Conserver"
+
+
+def test_relative_signal_vente():
+    from scripts.upsert_predictions import relative_signal, _quantile
+    # Distribution avec des titres franchement faibles -> bas décile passe en Vente,
+    # mais seulement s'il est aussi sous le plafond (0.40).
+    probas = sorted([0.20, 0.28, 0.33, 0.40, 0.45, 0.52, 0.60])
+    p90, p75, p10 = _quantile(probas, 0.90), _quantile(probas, 0.75), _quantile(probas, 0.10)
+    assert relative_signal(0.20, p90, p75, p10) == "Vente"        # pire du jour, < plafond
+    assert relative_signal(0.52, p90, p75, p10) != "Vente"        # proba correcte -> jamais Vente
+    # Jour où même le pire est au-dessus du plafond -> aucune Vente abusive.
+    hauts = sorted([0.44, 0.46, 0.50, 0.55, 0.60])
+    p90b, p75b, p10b = _quantile(hauts, 0.90), _quantile(hauts, 0.75), _quantile(hauts, 0.10)
+    assert relative_signal(0.44, p90b, p75b, p10b) == "Conserver"  # pire mais >= plafond
+
+
+def test_horizon_target_par_horizon():
+    from core.config import horizon_target, TARGET_RETURN
+    assert horizon_target(5) == 0.01
+    assert horizon_target(20) == 0.02
+    assert horizon_target(60) == 0.04
+    assert horizon_target(999) == TARGET_RETURN  # horizon inconnu -> défaut
+
+
+def test_build_records_horizon_et_cible():
+    import pandas as pd
+    from scripts.upsert_predictions import build_records
+    demo = pd.DataFrame({
+        "date": ["2026-08-07"] * 2,
+        "symbole": ["AAA", "BBB"],
+        "close": [1000, 2000],
+        "probabilite": [0.55, 0.40],
+    })
+    res = build_records(demo, horizon_days=5)
+    assert all(r["horizon_jours"] == 5 for r in res.records)
+    # date_cible = date + 5 jours calendaires
+    assert res.records[0]["date_cible"] == "2026-08-12"

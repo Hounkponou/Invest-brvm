@@ -21,13 +21,12 @@ from datetime import datetime
 
 import pandas as pd
 
-from core.config import supabase_client, TARGET_RETURN
+from core.config import supabase_client, TARGET_RETURN, horizon_target
 
 
 def run_evaluation(df_cours_du_jour):
-    print("[EVALUATE] Challenge des prédictions arrivées à terme...")
+    print("[EVALUATE] Challenge des prédictions arrivées à terme (multi-horizons)...")
     aujourd_hui = datetime.today().strftime("%Y-%m-%d")
-    seuil_pct = TARGET_RETURN * 100.0  # 0.035 -> 3.5 (%)
 
     # Toutes les prédictions échues (date_cible <= aujourd'hui) et non encore jugées.
     response = (
@@ -68,6 +67,11 @@ def run_evaluation(df_cours_du_jour):
 
         prix_reel = float(hist["close"].iloc[-1])
         ecart_pct = ((prix_reel - prix_init) / prix_init) * 100.0
+
+        # Seuil de réussite PROPRE À L'HORIZON de la prédiction (5j/20j/60j -> 1/2/4 %).
+        # Repli sur TARGET_RETURN pour les anciennes lignes sans horizon renseigné.
+        hz = pred.get("horizon_jours")
+        seuil_pct = (horizon_target(int(hz)) if hz else TARGET_RETURN) * 100.0
 
         supabase_client.table("log_predictions").update(
             {

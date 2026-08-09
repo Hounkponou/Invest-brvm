@@ -34,7 +34,8 @@ from datetime import datetime, timedelta
 from core.config import supabase_client, HORIZON_JOURS
 
 TABLE = "log_predictions"
-CONFLICT_KEYS = "date_prediction,symbole"
+# Clé métier ÉLARGIE à l'horizon (multi-horizons : 3 lignes par titre/séance).
+CONFLICT_KEYS = "date_prediction,symbole,horizon_jours"
 BATCH_SIZE = 200
 MAX_RETRIES = 4
 
@@ -70,28 +71,34 @@ def _quantile(sorted_vals: list, q: float):
     return sorted_vals[lo] * (1 - frac) + sorted_vals[hi] * frac
 
 
-# Planchers de « bon sens » : on n'étiquette jamais « Achat » un titre dont la
-# probabilité absolue est trop faible, même s'il est le meilleur d'un jour médiocre.
+# Planchers/plafonds de « bon sens » : on n'étiquette jamais « Achat » un titre à
+# proba trop faible (même le meilleur d'un jour médiocre), ni « Vente » un titre à
+# proba correcte (même le pire d'un bon jour).
 FLOOR_FORT = 0.50   # Achat Fort  : au moins mieux qu'un tirage à pile ou face
 FLOOR_MOD = 0.45    # Achat Modéré: proche du taux de base
+CEIL_VENTE = 0.40   # Vente       : franchement sous le taux de base
 
 
-def relative_signal(proba: float, p90, p75) -> str:
-    """Signal RELATIF : « meilleures opportunités du jour ».
+def relative_signal(proba: float, p90, p75, p10=None) -> str:
+    """Signal RELATIF à 4 modalités : « meilleures / pires opportunités du jour ».
 
     On classe les titres de la séance par probabilité :
       - Achat Fort   : top ~10 % (proba >= 90e centile) ET proba >= FLOOR_FORT ;
       - Achat Modéré : top ~25 % (proba >= 75e centile) ET proba >= FLOOR_MOD ;
+      - Vente        : bas ~10 % (proba <= 10e centile) ET proba <= CEIL_VENTE ;
       - Conserver    : sinon.
-    Le double critère (rang + plancher) donne toujours une liste utile les jours
-    calmes, sans jamais survendre un titre dont la proba absolue est faible.
+    Le double critère (rang + plancher/plafond) garde une liste utile les jours
+    calmes, sans jamais survendre un bon titre ni suracheter un mauvais.
     """
     seuil_fort = max(p90 if p90 is not None else 1.0, FLOOR_FORT)
     seuil_mod = max(p75 if p75 is not None else 1.0, FLOOR_MOD)
+    seuil_vente = min(p10 if p10 is not None else 0.0, CEIL_VENTE)
     if proba >= seuil_fort:
         return "Achat Fort"
     if proba >= seuil_mod:
         return "Achat Modéré"
+    if proba <= seuil_vente:
+        return "Vente"
     return "Conserver"
 
 
@@ -120,20 +127,24 @@ def build_records(
     include_optional: bool = True,
     model_version: str = "xgb-enhanced-v1",
     season_map: dict | None = None,
+    horizon_days: int | None = None,
+    target_return: float | None = None,
 ) -> BuildResult:
     """Transforme le DataFrame d'inférence en lignes prêtes pour l'upsert.
 
     `today_df` doit contenir : date, symbole, close, et une colonne de probabilité.
     Toute ligne incomplète est ignorée (et signalée), jamais poussée à moitié.
 
-    `season_map` (optionnel) : {symbole: {"tilt": -1|0|1, ...}} issu de
-    core.seasonality.compute_seasonality -> ajuste le score /10 (± saisonnalité).
+    `season_map` (optionnel) : {symbole: {"tilt": -1|0|1, ...}} -> tilt du score /10.
+    `horizon_days` : horizon de la prédiction (défaut HORIZON_JOURS) -> `horizon_jours`
+    et `date_cible` (= date + horizon_days).
     """
+    horizon_days = int(horizon_days or HORIZON_JOURS)
     season_map = season_map or {}
     result = BuildResult()
 
-    # Pré-passe : distribution des probabilités de la SÉANCE -> centiles pour le
-    # signal RELATIF (meilleures opportunités du jour).
+    # Pré-passe : distribution des probabilités de la SÉANCE (cet horizon) -> centiles
+    # pour le signal RELATIF (meilleures ET pires opportunités du jour).
     day_probas = []
     for _, row in today_df.iterrows():
         v = row.get(proba_col)
@@ -146,6 +157,7 @@ def build_records(
     day_probas.sort()
     p90 = _quantile(day_probas, 0.90)
     p75 = _quantile(day_probas, 0.75)
+    p10 = _quantile(day_probas, 0.10)
 
     for _, row in today_df.iterrows():
         symbole = row.get("symbole")
@@ -180,22 +192,22 @@ def build_records(
         else:
             d = datetime.fromisoformat(str(date_pred)[:10])
         date_str = d.strftime("%Y-%m-%d")
-        target_str = (d + timedelta(days=HORIZON_JOURS)).strftime("%Y-%m-%d")
+        target_str = (d + timedelta(days=horizon_days)).strftime("%Y-%m-%d")
 
         record = {
             "date_prediction": date_str,
             "symbole": str(symbole),
             "prix_initial": round(close, 2),
             "probabilite_modele": round(proba, 4),
-            "signal_emis": relative_signal(proba, p90, p75),
+            "signal_emis": relative_signal(proba, p90, p75, p10),
             "date_cible": target_str,
+            "horizon_jours": horizon_days,  # clé métier -> toujours écrit
         }
         if include_optional:
             tilt = season_map.get(str(symbole), {}).get("tilt", 0)
             record.update(
                 {
                     "score_sur_10": _tilt_score(proba, tilt),
-                    "horizon_jours": HORIZON_JOURS,
                     "modele_version": model_version,
                 }
             )

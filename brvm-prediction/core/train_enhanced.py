@@ -38,9 +38,21 @@ def _save_json(path: str, obj) -> None:
         json.dump(obj, f, ensure_ascii=False, indent=2)
 
 
-def optimize_and_train_model(df_train, features):
-    """Recherche d'hyperparamètres sur CV purgée puis calibration des probabilités."""
-    print("[TRAIN+] Validation croisée purgée (anti-fuite) + calibration...")
+def _mp(name: str, suffix: str) -> str:
+    """Chemin d'un artefact modèle, suffixé par l'horizon (ex. best_xgb_court.json)."""
+    base, ext = os.path.splitext(name)
+    fname = f"{base}_{suffix}{ext}" if suffix else name
+    return os.path.join(MODELS_DIR, fname)
+
+
+def optimize_and_train_model(df_train, features, suffix: str = "", horizon_days: int | None = None):
+    """Recherche d'hyperparamètres sur CV purgée puis calibration des probabilités.
+
+    `suffix` (ex. "court"/"moyen"/"long") suffixe les fichiers pour l'entraînement
+    MULTI-HORIZONS ; `horizon_days` cale la purge du PurgedKFold sur l'horizon.
+    """
+    horizon_days = int(horizon_days or HORIZON_JOURS)
+    print(f"[TRAIN+] CV purgée + calibration (horizon {horizon_days} j, suffix '{suffix or '—'}')...")
     os.makedirs(MODELS_DIR, exist_ok=True)
 
     # df_train est déjà trié par date -> l'index positionnel est l'axe temporel
@@ -53,7 +65,7 @@ def optimize_and_train_model(df_train, features):
     time_groups = pd.factorize(df_train["date"].to_numpy(), sort=True)[0]
 
     # --- 1. Recherche d'hyperparamètres sur CV purgée ---------------------
-    cv = PurgedKFold(n_splits=5, horizon=HORIZON_JOURS)
+    cv = PurgedKFold(n_splits=5, horizon=horizon_days)
     param_grid = {
         "n_estimators": [200, 300, 400, 600],
         "learning_rate": [0.01, 0.03, 0.05],
@@ -119,23 +131,23 @@ def optimize_and_train_model(df_train, features):
 
     # --- 3. Modèle final ré-entraîné sur TOUTES les données ---------------
     best_model.fit(X, y)
-    best_model.save_model(os.path.join(MODELS_DIR, "best_xgb_model.json"))
+    best_model.save_model(_mp("best_xgb_model.json", suffix))
 
     # Persistance du calibrateur (sans dépendance lourde : on stocke la courbe)
     try:
         import joblib
-        joblib.dump(calibrator, os.path.join(MODELS_DIR, "calibrator.joblib"))
+        joblib.dump(calibrator, _mp("calibrator.joblib", suffix))
     except Exception:
         # Repli : sérialiser la fonction de calibration en points (x, y)
         _save_json(
-            os.path.join(MODELS_DIR, "calibrator_points.json"),
+            _mp("calibrator_points.json", suffix),
             {
                 "x": calibrator.X_thresholds_.tolist(),
                 "y": calibrator.y_thresholds_.tolist(),
             },
         )
 
-    # Ordre canonique des features + rapport
+    # Ordre canonique des features (partagé entre horizons) + rapport par horizon
     _save_json(os.path.join(MODELS_DIR, "feature_cols.json"), list(features))
     importances = dict(
         sorted(
@@ -145,7 +157,7 @@ def optimize_and_train_model(df_train, features):
         )
     )
     _save_json(
-        os.path.join(MODELS_DIR, "train_report.json"),
+        _mp("train_report.json", suffix),
         {
             "pr_auc_cv": float(search.best_score_),
             "best_params": search.best_params_,

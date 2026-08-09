@@ -251,26 +251,30 @@ def _impute_features(df: pd.DataFrame, feature_cols: list[str], train_mask: pd.S
 # ---------------------------------------------------------------------------
 # Point d'entrée principal (drop-in replacement de build_features)
 # ---------------------------------------------------------------------------
-def build_features(df: pd.DataFrame):
-    """Construit l'ensemble des features enrichies + la cible à 15 jours.
+def build_features(df: pd.DataFrame, horizon_days: int | None = None, target_return: float | None = None):
+    """Construit les features enrichies + la cible à l'horizon demandé.
 
     Retourne EXACTEMENT le même triplet que l'ancienne fonction :
         (df_train, df_predict, feature_cols)
     afin de rester compatible avec main.py / train.py / predict.py.
 
+    - `horizon_days` / `target_return` : par défaut l'horizon « moyen » (config).
+      Appelée une fois par horizon pour l'entraînement/l'inférence multi-horizons.
     - df_train   : lignes dont on connaît le futur (target définie) -> apprentissage
     - df_predict : lignes du jour (futur inconnu)                    -> inférence
     - feature_cols : liste ORDONNÉE des colonnes de features
     """
-    print("[FEATURES+] Ingénierie enrichie (liquidité, cross-section, marché)...")
+    horizon_days = int(horizon_days or HORIZON_JOURS)
+    target_return = float(target_return if target_return is not None else TARGET_RETURN)
+    print(f"[FEATURES+] Ingénierie enrichie (horizon {horizon_days} j, cible {target_return:.0%})...")
     df = df.sort_values(["symbole", "date"]).reset_index(drop=True).copy()
 
     # --- Label & masque d'entraînement calculés TÔT ------------------------
-    # future_close = cours dans HORIZON_JOURS séances. Les lignes où il est connu
+    # future_close = cours dans horizon_days séances. Les lignes où il est connu
     # constituent l'univers d'entraînement ; celles où il est NaN sont les lignes
     # récentes (dont le jour de prédiction). On dérive ce masque MAINTENANT pour
     # caler la winsorisation sur le train seul (anti-fuite look-ahead).
-    df["future_close"] = df.groupby("symbole")["close"].shift(-HORIZON_JOURS)
+    df["future_close"] = df.groupby("symbole")["close"].shift(-horizon_days)
     train_mask = df["future_close"].notna()
 
     feature_cols: list[str] = []
@@ -286,9 +290,9 @@ def build_features(df: pd.DataFrame):
         if raw in df.columns and raw not in feature_cols:
             feature_cols.append(raw)
 
-    # --- Construction de la cible (identique à l'existant) -----------------
+    # --- Construction de la cible (à l'horizon/cible demandés) --------------
     df["target"] = (
-        (df["future_close"] - df["close"]) / df["close"] >= TARGET_RETURN
+        (df["future_close"] - df["close"]) / df["close"] >= target_return
     ).astype(int)
 
     # --- Qualité de ligne AVANT imputation ---------------------------------

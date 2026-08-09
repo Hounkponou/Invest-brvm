@@ -28,13 +28,27 @@ supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # serveur uniquement — ne JAMAIS l'exposer au frontend.
 GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip() or None
 
-# Paramètres globaux du modèle
-HORIZON_JOURS = 15
-# Cible de rendement à l'horizon. Abaissée de 3.5 % -> 2 % : objectif plus
-# atteignable (marché peu volatil), donc davantage de signaux positifs et un
-# taux de réussite potentiellement meilleur. Le label d'entraînement, l'évaluation
-# et l'affichage front sont tous alignés sur cette valeur.
+# Horizons de prédiction MULTIPLES (court / moyen / long terme).
+# La cible de rendement CROÎT avec l'horizon : un +1 % sur 5 séances est bien plus
+# dur qu'un +4 % sur 60 séances (la volatilité s'accumule dans le temps).
+HORIZONS = [
+    {"key": "court", "days": 5,  "target": 0.01, "label": "Court terme"},
+    {"key": "moyen", "days": 20, "target": 0.02, "label": "Moyen terme"},
+    {"key": "long",  "days": 60, "target": 0.04, "label": "Long terme"},
+]
+
+# Rétro-compatibilité : l'horizon « moyen » (20 j / 2 %) reste le défaut pour les
+# imports existants (features_enhanced, evaluate, upsert_predictions).
+HORIZON_JOURS = 20
 TARGET_RETURN = 0.02
+
+
+def horizon_target(days: int) -> float:
+    """Cible de rendement associée à un horizon (en jours). Défaut = TARGET_RETURN."""
+    for h in HORIZONS:
+        if h["days"] == days:
+            return h["target"]
+    return TARGET_RETURN
 
 # Dossier des modèles ANCRÉ au projet (chemin absolu) : peu importe le répertoire
 # depuis lequel on lance `python main.py`, les artefacts (modèle, calibrateur,
