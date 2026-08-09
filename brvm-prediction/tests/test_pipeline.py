@@ -230,3 +230,19 @@ def test_tilt_score_borne():
     assert _tilt_score(0.62, -1) == 5
     assert _tilt_score(1.0, +1) == 10   # borné en haut
     assert _tilt_score(0.0, -1) == 0    # borné en bas
+
+
+def test_relative_signal_rang_et_plancher():
+    from scripts.upsert_predictions import relative_signal, _quantile
+    # Jour MÉDIOCRE : max 0.44 -> le plancher empêche tout « Achat » abusif.
+    faibles = sorted([0.30, 0.35, 0.40, 0.42, 0.44])
+    p90, p75 = _quantile(faibles, 0.90), _quantile(faibles, 0.75)
+    assert relative_signal(0.44, p90, p75) == "Conserver"  # meilleur du jour mais < plancher
+    # Jour FRANC : quelques titres bien au-dessus -> top ~10 % = Achat Fort,
+    # top ~25 % = Achat Modéré (seuils = centiles de la séance, ici ~0.71 / ~0.66).
+    forts = sorted([0.40, 0.45, 0.50, 0.55, 0.62, 0.70, 0.72])
+    p90, p75 = _quantile(forts, 0.90), _quantile(forts, 0.75)
+    assert relative_signal(0.72, p90, p75) == "Achat Fort"     # >= 90e centile
+    assert relative_signal(0.70, p90, p75) == "Achat Modéré"   # entre 75e et 90e
+    assert relative_signal(0.62, p90, p75) == "Conserver"      # sous le 75e centile
+    assert relative_signal(0.40, p90, p75) == "Conserver"

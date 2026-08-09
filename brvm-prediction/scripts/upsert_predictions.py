@@ -51,10 +51,46 @@ def proba_to_score_10(proba: float) -> int:
 
 
 def proba_to_signal(proba: float) -> str:
-    """Traduit la probabilité en signal métier (mêmes seuils que l'app)."""
+    """Signal ABSOLU (seuils fixes). Conservé pour compatibilité / repli."""
     if proba >= 0.70:
         return "Achat Fort"
     if proba >= 0.55:
+        return "Achat Modéré"
+    return "Conserver"
+
+
+def _quantile(sorted_vals: list, q: float):
+    """Quantile linéaire sur une liste TRIÉE (sans numpy). None si vide."""
+    if not sorted_vals:
+        return None
+    idx = q * (len(sorted_vals) - 1)
+    lo = int(idx)
+    hi = min(lo + 1, len(sorted_vals) - 1)
+    frac = idx - lo
+    return sorted_vals[lo] * (1 - frac) + sorted_vals[hi] * frac
+
+
+# Planchers de « bon sens » : on n'étiquette jamais « Achat » un titre dont la
+# probabilité absolue est trop faible, même s'il est le meilleur d'un jour médiocre.
+FLOOR_FORT = 0.50   # Achat Fort  : au moins mieux qu'un tirage à pile ou face
+FLOOR_MOD = 0.45    # Achat Modéré: proche du taux de base
+
+
+def relative_signal(proba: float, p90, p75) -> str:
+    """Signal RELATIF : « meilleures opportunités du jour ».
+
+    On classe les titres de la séance par probabilité :
+      - Achat Fort   : top ~10 % (proba >= 90e centile) ET proba >= FLOOR_FORT ;
+      - Achat Modéré : top ~25 % (proba >= 75e centile) ET proba >= FLOOR_MOD ;
+      - Conserver    : sinon.
+    Le double critère (rang + plancher) donne toujours une liste utile les jours
+    calmes, sans jamais survendre un titre dont la proba absolue est faible.
+    """
+    seuil_fort = max(p90 if p90 is not None else 1.0, FLOOR_FORT)
+    seuil_mod = max(p75 if p75 is not None else 1.0, FLOOR_MOD)
+    if proba >= seuil_fort:
+        return "Achat Fort"
+    if proba >= seuil_mod:
         return "Achat Modéré"
     return "Conserver"
 
@@ -96,6 +132,21 @@ def build_records(
     season_map = season_map or {}
     result = BuildResult()
 
+    # Pré-passe : distribution des probabilités de la SÉANCE -> centiles pour le
+    # signal RELATIF (meilleures opportunités du jour).
+    day_probas = []
+    for _, row in today_df.iterrows():
+        v = row.get(proba_col)
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            continue
+        if 0.0 <= v <= 1.0:
+            day_probas.append(v)
+    day_probas.sort()
+    p90 = _quantile(day_probas, 0.90)
+    p75 = _quantile(day_probas, 0.75)
+
     for _, row in today_df.iterrows():
         symbole = row.get("symbole")
         close = row.get("close")
@@ -136,7 +187,7 @@ def build_records(
             "symbole": str(symbole),
             "prix_initial": round(close, 2),
             "probabilite_modele": round(proba, 4),
-            "signal_emis": proba_to_signal(proba),
+            "signal_emis": relative_signal(proba, p90, p75),
             "date_cible": target_str,
         }
         if include_optional:

@@ -248,8 +248,10 @@ export default function Predictions() {
       <footer className="mt-10 rounded-2xl border border-border bg-surface p-4 text-xs text-muted">
         <strong className="text-fg">Comment lire ces signaux ?</strong> Le score sur 10
         traduit la probabilité, calibrée par le modèle, que le titre progresse d'au moins
-        2 % dans les 15 prochains jours. « Achat Fort » = probabilité ≥ 70 %,
-        « Achat Modéré » ≥ 55 %. Le Challenge juge chaque prédiction arrivée à terme en
+        2 % dans les 15 prochains jours. Les signaux sont <strong className="text-fg">relatifs</strong> :
+        chaque séance, « Achat Fort » distingue les meilleures opportunités du jour (top ~10 %)
+        et « Achat Modéré » le top ~25 %, avec un plancher de probabilité pour ne jamais
+        survendre un titre peu convaincant. Le Challenge juge chaque prédiction arrivée à terme en
         <strong className="text-fg"> trois modalités</strong> : <em>réussi</em> (objectif atteint),
         <em> partiel</em> (bon sens, mais objectif non atteint) et <em>manqué</em> (mauvais sens).
         Ceci n'est pas un conseil en investissement.
