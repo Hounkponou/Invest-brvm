@@ -19,6 +19,7 @@ import Screener from './pages/Screener';
 import Simulator from './pages/Simulator';
 import Portfolio from './pages/Portfolio';
 import Predictions from './pages/Predictions'; // Nouveau Module Prédictif (autonome, thème Dark/Solar)
+import { expectedReturnsAndRisk, optimizeWeights, projectScenarios } from './utils/portfolioOptim';
 
 // ==========================================
 // MOYENNES MOBILES (MM20 / MM50 / MM100)
@@ -360,48 +361,107 @@ export default function App() {
     setIsSelling(false); setSellModal({ isOpen: false, sigle: '', maxShares: 0 }); setSellQuantity('');
   };
 
+  // Récupère ~3 ans d'historique (date, close) par titre, depuis le bucket CDN
+  // (déjà servi au graphique de détail), avec repli sur full_stock_pro.
+  const fetchHistories = async (symbols, sinceStr) => {
+    const out = {};
+    await Promise.all(symbols.map(async (sym) => {
+      try {
+        const { data: pub } = supabase.storage.from('market-history').getPublicUrl(`${sym}.json`);
+        const res = await fetch(pub.publicUrl, { cache: 'no-cache' });
+        if (res.ok) {
+          const rows = await res.json();
+          if (Array.isArray(rows)) { out[sym] = rows.filter(r => String(r.date).slice(0, 10) >= sinceStr); return; }
+        }
+      } catch (e) { /* repli ci-dessous */ }
+      try {
+        const { data } = await supabase.from('full_stock_pro').select('date, close')
+          .eq('symbole', sym).gte('date', sinceStr).order('date', { ascending: true });
+        if (Array.isArray(data)) out[sym] = data;
+      } catch (e) { /* titre ignoré */ }
+    }));
+    return out;
+  };
+
   const runSimulationAndBacktest = async () => {
     setLoadingSim(true); setBacktestResult(null);
-    let scoredStocks = [...globallyFilteredMarket].map(item => {
+    // 1. Score de MÉTHODE (inchangé) -> shortlist des 8 meilleurs candidats.
+    const scoredStocks = [...globallyFilteredMarket].map(item => {
       let simScore = item.score_ia;
       if (simStrategy === 'value' && item.per && item.per < 12) simScore += 3;
       if (simStrategy === 'value' && item.rsi_14 < 35) simScore += 2;
       if (simStrategy === 'momentum' && item.variation > 1) simScore += 3;
       if (simStrategy === 'momentum' && item.rsi_14 > 50 && item.rsi_14 < 70) simScore += 2;
-      if (simStrategy === 'rente' && (item.rendement_dividende || 0) > 7) simScore += 5; 
+      if (simStrategy === 'rente' && (item.rendement_dividende || 0) > 7) simScore += 5;
       return { ...item, simScore };
     }).sort((a, b) => b.simScore - a.simScore);
 
-    const selection = scoredStocks.slice(0, 4); const symbols = selection.map(s => s.symbole); const weights = [0.40, 0.30, 0.20, 0.10]; 
-    const dateStr = new Date(new Date().setFullYear(new Date().getFullYear() - 3)).toISOString().split('T')[0];
+    const shortlist = scoredStocks.slice(0, 8);
+    const symbols = shortlist.map(s => s.symbole);
+    const bySym = Object.fromEntries(shortlist.map(s => [s.symbole, s]));
+    const sinceStr = new Date(new Date().setFullYear(new Date().getFullYear() - 3)).toISOString().split('T')[0];
 
     try {
-      const { data: histData } = await supabase.from('full_stock_pro').select('symbole, close').in('symbole', symbols).gte('date', dateStr).order('date', { ascending: true }).limit(40);
-      const pastPrices = {};
-      symbols.forEach(sym => { const rows = histData?.filter(r => r.symbole === sym); if (rows && rows.length > 0) pastPrices[sym] = rows[0].close; });
+      // 2. Historique 3 ans -> rendement annualisé & volatilité par titre.
+      const historyBySymbol = await fetchHistories(symbols, sinceStr);
+      const stats = expectedReturnsAndRisk(historyBySymbol);
 
-      let initialBacktestValue = 0, finalCapitalValue = 0, totalDividendsCollected = 0; const newPort = [];
-      selection.forEach((item, index) => {
-        const allocAmount = simCapital * weights[index];
+      // 3. OPTIMISATION des poids : rendement/risque robuste + tilt de méthode.
+      const scores = shortlist.map(s => s.simScore);
+      const minS = Math.min(...scores), maxS = Math.max(...scores);
+      const candidates = shortlist
+        .filter(s => stats[s.symbole] && stats[s.symbole].nMonths >= 4)
+        .map(s => ({
+          symbole: s.symbole,
+          mu: stats[s.symbole].mu,
+          sigma: stats[s.symbole].sigma,
+          methodSignal: maxS > minS ? (s.simScore - minS) / (maxS - minS) : 0.5,
+        }));
+      let weights = optimizeWeights(candidates, { cap: 0.35, minWeight: 0.05, maxHoldings: 6 });
+      if (weights.length === 0) {
+        // Repli (aucun historique) : équipondération des 4 premiers.
+        weights = shortlist.slice(0, 4).map(s => ({ symbole: s.symbole, weight: 0.25 }));
+      }
+
+      // 4. Backtest avec les poids OPTIMISÉS (logique plus-value + dividendes cohérente).
+      let initialBacktestValue = 0, finalCapitalValue = 0, totalDividendsCollected = 0, portVar = 0;
+      const newPort = [];
+      weights.forEach(({ symbole, weight }) => {
+        const item = bySym[symbole];
+        const rows = (historyBySymbol[symbole] || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+        const pastPrice = rows.length ? Number(rows[0].close) : item.close;
+        const sigma = stats[symbole]?.sigma || 0.2;
+        const allocAmount = simCapital * weight;
         const sharesToBuyNow = Math.floor(allocAmount / item.close);
-        const pastPrice = pastPrices[item.symbole] || item.close; 
         const sharesBoughtPast = Math.floor(allocAmount / pastPrice);
-        initialBacktestValue += (sharesBoughtPast * pastPrice);
-        finalCapitalValue += (sharesBoughtPast * item.close);
-        totalDividendsCollected += ((sharesBoughtPast * pastPrice) * ((item.rendement_dividende || 0) / 100) * 3);
-        newPort.push({ sigle: item.symbole, nom: item.nom, shares: sharesToBuyNow, buyPrice: item.close, total: sharesToBuyNow * item.close, pastPrice: pastPrice, yield: item.rendement_dividende || 0 });
+        initialBacktestValue += sharesBoughtPast * pastPrice;
+        finalCapitalValue += sharesBoughtPast * item.close;
+        totalDividendsCollected += (sharesBoughtPast * pastPrice) * ((item.rendement_dividende || 0) / 100) * 3;
+        portVar += (weight * sigma) ** 2;
+        newPort.push({ sigle: symbole, nom: item.nom, shares: sharesToBuyNow, buyPrice: item.close, total: sharesToBuyNow * item.close, weight, yield: item.rendement_dividende || 0 });
       });
-      // On n'affiche que les positions RÉELLEMENT achetables (>= 1 action) :
-      // une valeur trop chère pour 1 action avec son poids donne 0 -> carte inutile.
+
       setProposedPortfolio(newPort.filter(p => p.shares > 0));
+
       const totalReturnVal = finalCapitalValue + totalDividendsCollected;
+      // 5. PROJECTION à scénarios (à partir du rendement/volatilité du portefeuille).
+      const capAnnual = (initialBacktestValue > 0 && finalCapitalValue > 0)
+        ? Math.pow(finalCapitalValue / initialBacktestValue, 1 / 3) - 1 : 0;
+      const annualVol = Math.sqrt(portVar);
+      const divYieldAnnual = initialBacktestValue > 0 ? (totalDividendsCollected / initialBacktestValue) / 3 : 0;
+      const projection = projectScenarios(Math.round(initialBacktestValue), capAnnual, annualVol, divYieldAnnual, 5);
+
       setBacktestResult({
-        initial: Math.round(initialBacktestValue),                 // capital réellement investi
-        finalCapital: Math.round(finalCapitalValue),               // valeur finale des actions
-        capitalGain: Math.round(finalCapitalValue - initialBacktestValue), // plus-value
-        dividends: Math.round(totalDividendsCollected),            // dividendes estimés (arrondis)
+        initial: Math.round(initialBacktestValue),
+        finalCapital: Math.round(finalCapitalValue),
+        capitalGain: Math.round(finalCapitalValue - initialBacktestValue),
+        dividends: Math.round(totalDividendsCollected),
         totalReturnVal: Math.round(totalReturnVal),
         perfTotal: initialBacktestValue > 0 ? ((totalReturnVal - initialBacktestValue) / initialBacktestValue) * 100 : 0,
+        annualReturn: (capAnnual + divYieldAnnual) * 100,   // total annualisé (capital + dividende)
+        annualVol: annualVol * 100,
+        projection,
+        objectiveLabel: 'Rendement/risque, cohérent avec la méthode',
       });
     } catch (err) { console.error(err); } setLoadingSim(false);
   };
