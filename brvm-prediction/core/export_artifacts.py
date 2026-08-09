@@ -28,6 +28,7 @@ from core.config import BASE_DIR, supabase_client
 OUTPUT_DIR = os.path.join(os.path.dirname(BASE_DIR), "brvm-quant", "public", "data")
 MARKET_PATH = os.path.join(OUTPUT_DIR, "market_latest.json")
 SEASON_PATH = os.path.join(OUTPUT_DIR, "seasonality.json")
+RISK_PATH = os.path.join(OUTPUT_DIR, "risk.json")
 
 # Bucket Supabase Storage (public, servi par CDN) pour l'historique par action.
 # Trop volumineux pour un commit git quotidien -> stockage objet.
@@ -186,10 +187,36 @@ def run_export(df_market):
     # --- Saisonnalité du mois courant (par titre) -> artefact CDN ----------
     _export_seasonality(df_market)
 
+    # --- Métriques de RISQUE par titre -> artefact CDN ---------------------
+    _export_risk(df_market)
+
     # Historique complet par action -> Supabase Storage (CDN)
     _upload_history(df_market)
 
     return len(records)
+
+
+def _export_risk(df_market) -> int:
+    """Écrit public/data/risk.json : liquidité, volatilité ajustée, VaR historique,
+    distribution et bêta sectoriel par titre (pour le Screener et le détail action)."""
+    from core.risk import compute_risk, fetch_ex_div_map
+
+    ex_div_map = fetch_ex_div_map(supabase_client)
+    risk = compute_risk(df_market, ex_div_map)
+    if not risk:
+        print("[EXPORT] Risque indisponible (historique vide). Étape ignorée.")
+        return 0
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "ex_div_dates": len(ex_div_map),
+        "risk": risk,
+    }
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    with open(RISK_PATH, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False)
+    print(f"[EXPORT] Risque de {len(risk)} titres écrit dans {RISK_PATH} "
+          f"({len(ex_div_map)} dates ex-dividende).")
+    return len(risk)
 
 
 def _export_seasonality(df_market) -> int:

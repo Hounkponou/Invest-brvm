@@ -248,6 +248,58 @@ def test_relative_signal_rang_et_plancher():
     assert relative_signal(0.40, p90, p75) == "Conserver"
 
 
+# --------------------------------------------------------------------------- risque
+def test_liquidity_level_seuils():
+    from core.risk import _liquidity_level
+    assert _liquidity_level(0.60, 5e6) == "Illiquide"      # > 40 % jours blancs
+    assert _liquidity_level(0.05, 500_000) == "Illiquide"  # turnover trop faible
+    assert _liquidity_level(0.20, 5e6) == "Peu liquide"
+    assert _liquidity_level(0.02, 50e6) == "Liquide"
+
+
+def test_hist_var_quantile_empirique():
+    from core.risk import _hist_var
+    import numpy as np
+    rets = np.linspace(-0.10, 0.10, 200)   # symétrique
+    d95, d99 = _hist_var(rets, 0.05), _hist_var(rets, 0.01)
+    assert d99 <= d95 < 0                   # 1 % plus sévère que 5 %, tous deux pertes
+
+
+def test_exdiv_mask_isole_le_detachement():
+    from core.risk import _exdiv_mask
+    dates = pd.to_datetime(["2024-05-14", "2024-05-15", "2024-05-16", "2024-11-01",
+                            "2023-05-15"])
+    dates = pd.Series(dates)
+    mask = _exdiv_mask(dates, "2024-05-15")
+    assert mask.iloc[1]           # jour exact -> masqué
+    assert mask.iloc[0] and mask.iloc[2]   # ±window -> masqués
+    assert not mask.iloc[3]       # novembre -> non masqué
+    assert mask.iloc[4]           # même mois-jour, autre année -> masqué
+
+
+def test_compute_risk_vol_ajustee_exclut_dividende():
+    from core.risk import compute_risk
+    import numpy as np
+    # 2 titres même secteur (Finances) : SGBC + SIBC, ~2 ans, avec une CHUTE de
+    # détachement le 2024-05-15 pour SGBC.
+    rng = pd.bdate_range("2023-01-01", "2024-12-31")
+    rs = np.random.RandomState(1)
+    rows = []
+    for sym in ("SGBC", "SIBC"):
+        px = 10000.0
+        for dt in rng:
+            shock = -0.12 if (sym == "SGBC" and dt.strftime("%Y-%m-%d") == "2024-05-15") else 0.0
+            px *= (1 + shock + rs.normal(0, 0.01))
+            rows.append({"symbole": sym, "date": dt, "close": round(px, 2), "volume": 1000})
+    df = pd.DataFrame(rows)
+    risk = compute_risk(df, {"SGBC": "2024-05-15"})
+    assert set(risk) == {"SGBC", "SIBC"}
+    # Le masque du détachement retire la grosse chute -> vol ajustée <= vol brute.
+    assert risk["SGBC"]["volatility"]["adj"] <= risk["SGBC"]["volatility"]["raw"]
+    assert risk["SGBC"]["liquidity"]["level"] in {"Liquide", "Peu liquide", "Illiquide"}
+    assert risk["SGBC"]["var"]["d95"] < 0
+
+
 def test_relative_signal_vente():
     from scripts.upsert_predictions import relative_signal, _quantile
     # Distribution avec des titres franchement faibles -> bas décile passe en Vente,

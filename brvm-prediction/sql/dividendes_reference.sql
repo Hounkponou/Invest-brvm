@@ -12,6 +12,12 @@ create table if not exists public.dividendes_reference (
   updated_at    timestamptz not null default now()
 );
 
+-- Date de détachement (ex-dividende) du dernier exercice : sert à ISOLER le jour
+-- de détachement (baisse mécanique) dans le calcul de volatilité (core/risk.py).
+-- Migration à exécuter si la table existe déjà :
+alter table public.dividendes_reference
+  add column if not exists date_ex_dividende date;
+
 -- Sécurité : lecture pour les utilisateurs connectés ; écriture réservée au
 -- pipeline (clé service_role, qui bypasse la RLS).
 alter table public.dividendes_reference enable row level security;

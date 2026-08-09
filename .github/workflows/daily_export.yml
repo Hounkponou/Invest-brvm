@@ -28,6 +28,6 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action Bot'
           git config --global user.email 'action@github.com'
-          git add brvm-quant/public/data/market_latest.json brvm-quant/public/data/seasonality.json
+          git add brvm-quant/public/data/market_latest.json brvm-quant/public/data/seasonality.json brvm-quant/public/data/risk.json
           git commit -m "Automated market snapshot update" || echo "No changes"
           git push

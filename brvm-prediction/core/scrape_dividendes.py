@@ -146,12 +146,15 @@ def latest_dividend_per_symbol(df: pd.DataFrame) -> pd.DataFrame:
     d = add_symbole(df).dropna(subset=["symbole"])
     d = d[d["exercice"].notna() & d["montant_net"].notna()]
     if d.empty:
-        return pd.DataFrame(columns=["symbole", "exercice", "dividende_net"])
+        return pd.DataFrame(columns=["symbole", "exercice", "dividende_net", "date_ex_dividende"])
     last_ex = d.groupby("symbole")["exercice"].transform("max")
     recent = d[d["exercice"] == last_ex]
-    out = (recent.groupby("symbole")
-           .agg(exercice=("exercice", "max"), dividende_net=("montant_net", "sum"))
-           .reset_index())
+    agg = {"exercice": ("exercice", "max"), "dividende_net": ("montant_net", "sum")}
+    # Date ex-dividende la plus récente de l'exercice retenu (pour isoler le
+    # détachement dans le calcul de volatilité côté risque). Optionnelle.
+    if "date_ex_dividende" in recent.columns:
+        agg["date_ex_dividende"] = ("date_ex_dividende", "max")
+    out = recent.groupby("symbole").agg(**agg).reset_index()
     return out
 
 
@@ -169,12 +172,25 @@ def run_dividends() -> int:
         return 0
     ref = latest_dividend_per_symbol(raw)
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    records = [
-        {"symbole": r["symbole"], "exercice": int(r["exercice"]),
-         "dividende_net": round(float(r["dividende_net"]), 4), "updated_at": now}
-        for _, r in ref.iterrows()
-    ]
-    supabase_client.table("dividendes_reference").upsert(records, on_conflict="symbole").execute()
+
+    def _record(r, with_exdiv):
+        rec = {"symbole": r["symbole"], "exercice": int(r["exercice"]),
+               "dividende_net": round(float(r["dividende_net"]), 4), "updated_at": now}
+        if with_exdiv and r.get("date_ex_dividende"):
+            rec["date_ex_dividende"] = str(r["date_ex_dividende"])[:10]
+        return rec
+
+    has_exdiv = "date_ex_dividende" in ref.columns
+    records = [_record(r, has_exdiv) for _, r in ref.iterrows()]
+    try:
+        supabase_client.table("dividendes_reference").upsert(records, on_conflict="symbole").execute()
+    except Exception as exc:  # noqa: BLE001 - colonne date_ex_dividende absente -> réessai sans
+        if has_exdiv and ("date_ex_dividende" in str(exc) or "column" in str(exc).lower()):
+            print("[DIVIDENDES] Colonne date_ex_dividende absente -> upsert sans (exécuter la migration SQL).")
+            records = [_record(r, False) for _, r in ref.iterrows()]
+            supabase_client.table("dividendes_reference").upsert(records, on_conflict="symbole").execute()
+        else:
+            raise
     print(f"[DIVIDENDES] {len(records)} dividendes de référence upsertés dans dividendes_reference.")
     return len(records)
 
