@@ -20,6 +20,8 @@ import Simulator from './pages/Simulator';
 import Portfolio from './pages/Portfolio';
 import Predictions from './pages/Predictions'; // Nouveau Module Prédictif (autonome, thème Dark/Solar)
 import { expectedReturnsAndRisk, optimizeWeights, projectScenarios } from './utils/portfolioOptim';
+import useRisk from './hooks/useRisk';
+import RiskPanel from './components/RiskPanel';
 
 // ==========================================
 // MOYENNES MOBILES (MM20 / MM50 / MM100)
@@ -135,6 +137,8 @@ export default function App() {
   const [globalSector, setGlobalSector] = useState('All');
   const [filterVal, setFilterVal] = useState('All');
   const [filterRsi, setFilterRsi] = useState('All');
+  const [filterLiquidity, setFilterLiquidity] = useState('All');
+  const { bySymbol: riskBySymbol } = useRisk();  // métriques de risque par titre (risk.json)
   const [screenerSort, setScreenerSort] = useState('score');
   
   const [selectedStock, setSelectedStock] = useState(null);
@@ -565,7 +569,12 @@ export default function App() {
         const maxPrice = filterMaxPrice !== '' ? Number(filterMaxPrice) : Infinity;
         const passPrice = currentPrice >= minPrice && currentPrice <= maxPrice;
 
-        return passVal && passRsi && passPrice;
+        // Filtre de LIQUIDITÉ (niveau issu de risk.json). 'All' = pas de filtre ;
+        // si le risque n'est pas encore chargé pour un titre, on ne l'exclut pas.
+        const liqLevel = riskBySymbol[i.symbole]?.liquidity?.level;
+        const passLiq = filterLiquidity === 'All' || !liqLevel || liqLevel === filterLiquidity;
+
+        return passVal && passRsi && passPrice && passLiq;
       });
 
       if (screenerSort === 'score') result.sort((a, b) => b.score_ia - a.score_ia);
@@ -576,7 +585,7 @@ export default function App() {
       if (screenerSort === 'yield_desc') result.sort((a, b) => (b.rendement_dividende || 0) - (a.rendement_dividende || 0));
       
       return result;
-    }, [globallyFilteredMarket, filterVal, filterRsi, filterMinPrice, filterMaxPrice, screenerSort]);
+    }, [globallyFilteredMarket, filterVal, filterRsi, filterMinPrice, filterMaxPrice, screenerSort, filterLiquidity, riskBySymbol]);
 
   const groupedPortfolio = useMemo(() => {
     if (!savedPortfolio || savedPortfolio.length === 0) return [];
@@ -792,7 +801,7 @@ export default function App() {
           )}
 
           {/* ZONE DE GRAPHIQUES HISTORIQUES */}
-          <div style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', minHeight: '350px' }}>
+          <div className="stock-chart-panel" style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', minHeight: '350px' }}>
             {loadingHistory ? <div className="skeleton" style={{ width: '100%', height: '100%', minHeight: '310px' }} /> : (
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={displayedHistory}>
@@ -811,6 +820,9 @@ export default function App() {
               </ResponsiveContainer>
             )}
           </div>
+
+          {/* ANALYSE DU RISQUE (liquidité, volatilité ajustée, VaR, distribution, bêta) */}
+          <RiskPanel risk={riskBySymbol[selectedStock.symbole]} sector={getSector(selectedStock.symbole)} />
         </div>
       )}
 
@@ -834,6 +846,8 @@ export default function App() {
             screenerSort={screenerSort} setScreenerSort={setScreenerSort}
             filterVal={filterVal} setFilterVal={setFilterVal}
             filterRsi={filterRsi} setFilterRsi={setFilterRsi}
+            filterLiquidity={filterLiquidity} setFilterLiquidity={setFilterLiquidity}
+            riskBySymbol={riskBySymbol}
             screenerData={screenerData}
             sectorPerStats={sectorPerStats}
             

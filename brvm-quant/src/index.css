@@ -298,6 +298,8 @@ tbody tr:hover { background-color: var(--bg-hover); }
 
   /* --- Modale de détail d'action ---------------------------------------- */
   .stock-detail { padding: 16px !important; }
+  /* Graphique : hauteur fixe généreuse sur mobile (ne pas l'écraser en flex). */
+  .stock-chart-panel { flex: none !important; height: 60vh; min-height: 380px !important; padding: 12px !important; }
   .stock-detail h2 { font-size: 1.6em !important; }
   .stock-detail-head { flex-wrap: wrap; gap: 12px; }
   .stock-detail-trading { flex-wrap: wrap; }

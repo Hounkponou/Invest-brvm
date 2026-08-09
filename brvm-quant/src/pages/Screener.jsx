@@ -22,17 +22,25 @@ const RSI_OPTIONS = [
   { value: 'Survendu', label: 'Survendues (< 30)' },
   { value: 'Suracheté', label: 'Surachetées (> 70)' },
 ];
+const LIQ_OPTIONS = [
+  { value: 'All', label: 'Toutes' },
+  { value: 'Liquide', label: 'Liquides' },
+  { value: 'Peu liquide', label: 'Peu liquides' },
+  { value: 'Illiquide', label: 'Illiquides' },
+];
 
 export default function Screener() {
   const {
     screenerSort, setScreenerSort,
     filterVal, setFilterVal,
     filterRsi, setFilterRsi,
+    filterLiquidity, setFilterLiquidity,
     filterMinPrice, setFilterMinPrice,
     filterMaxPrice, setFilterMaxPrice,
     screenerData,
     setSelectedStock,
-    sectorPerStats
+    sectorPerStats,
+    riskBySymbol = {},
   } = useOutletContext();
 
   return (
@@ -51,6 +59,7 @@ export default function Screener() {
       <FilterPanel>
         <FilterSelect label="Valorisation" value={filterVal} onChange={setFilterVal} options={VAL_OPTIONS} />
         <FilterSelect label="Momentum" value={filterRsi} onChange={setFilterRsi} options={RSI_OPTIONS} />
+        <FilterSelect label="Liquidité" value={filterLiquidity} onChange={setFilterLiquidity} options={LIQ_OPTIONS} />
 
         {/* Intervalle de prix : deux champs côte à côte sous un même label */}
         <div className="filter-field">
@@ -70,6 +79,7 @@ export default function Screener() {
             item={item}
             onClick={setSelectedStock}
             sectorAvgPer={sectorPerStats?.[getSector(item.symbole)]?.avg}
+            liquidity={riskBySymbol[item.symbole]?.liquidity?.level}
           />
         ))}
         {screenerData.length === 0 && (

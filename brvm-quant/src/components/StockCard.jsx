@@ -1,7 +1,9 @@
 import React from 'react';
 import { getValColor } from '../utils/uiHelpers';
 
-export default function StockCard({ item, onClick, sectorAvgPer }) {
+const LIQ_COLOR = { 'Liquide': 'var(--up-color)', 'Peu liquide': 'var(--warn-color)', 'Illiquide': 'var(--down-color)' };
+
+export default function StockCard({ item, onClick, sectorAvgPer, liquidity }) {
   const isUp = item.variation >= 0;
 
   // Comparaison compacte du PER à la moyenne du secteur (badge sur la carte).
@@ -49,6 +51,11 @@ export default function StockCard({ item, onClick, sectorAvgPer }) {
           <span className="stock-name" style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>
             {item.nom}
           </span>
+          {liquidity && (
+            <span style={{ display: 'inline-block', marginTop: 4, fontSize: '0.7em', fontWeight: 700, color: LIQ_COLOR[liquidity] || 'var(--text-muted)', border: `1px solid ${LIQ_COLOR[liquidity] || 'var(--border-color)'}`, borderRadius: 20, padding: '1px 8px' }}>
+              {liquidity}
+            </span>
+          )}
         </div>
         <div style={{ textAlign: 'right' }}>
           <div className="stock-price" style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>
