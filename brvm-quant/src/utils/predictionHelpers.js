@@ -121,7 +121,7 @@ function directiveDir(directive) {
  *   - VENTE    -> tendance baissière ;
  *   - CONSERVER-> tendance neutre.
  */
-export function getForecast(pred, directive, horizonDays = 15, targetReturn = 3.5) {
+export function getForecast(pred, directive, horizonDays = 15, targetReturn = 2.0) {
   const p = Number(pred?.probabilite_modele ?? 0);
   const dir = directiveDir(directive);
   if (dir > 0)
@@ -141,7 +141,7 @@ export function getForecast(pred, directive, horizonDays = 15, targetReturn = 3.
  * estimée depuis l'ATR (volatilité) ou, à défaut, ±3 %. Cohérent avec la
  * directive : ACHAT vise plus haut, VENTE plus bas, CONSERVER reste autour du prix.
  */
-export function getTargetPrice(pred, market, directive, horizonDays = 15, targetReturn = 3.5) {
+export function getTargetPrice(pred, market, directive, horizonDays = 15, targetReturn = 2.0) {
   const entry = Number(pred?.prix_initial);
   if (!entry || entry <= 0) return null;
 
@@ -227,6 +227,28 @@ export function formatPct(value, digits = 1) {
  * Agrège une liste de prédictions CLÔTURÉES (avec statut_reussite) en
  * statistiques de backtest + séries temporelles prêtes pour Recharts.
  */
+/**
+ * Statut à 3 MODALITÉS d'une prédiction clôturée :
+ *   - "reussi"  : objectif atteint (statut_reussite = true) ;
+ *   - "partiel" : bon SENS mais objectif non atteint (écart > 0 sans toucher la cible) ;
+ *   - "manque"  : mauvais sens (écart ≤ 0).
+ * Dérivé sans migration : statut_reussite (cible atteinte) + signe de l'écart.
+ */
+export function getClosedStatus(p) {
+  const reached = p.statut_reussite === true || p.statut_reussite === "true";
+  if (reached) return "reussi";
+  return Number(p.ecart_pourcentage) > 0 ? "partiel" : "manque";
+}
+
+/** Métadonnées visuelles d'un statut à 3 modalités. */
+export function getClosedStatusMeta(status) {
+  if (status === "reussi")
+    return { label: "Réussi", color: "var(--ipx-up)", bg: "var(--ipx-up-soft)" };
+  if (status === "partiel")
+    return { label: "Partiel", color: "var(--ipx-warn)", bg: "var(--ipx-warn-soft)" };
+  return { label: "Manqué", color: "var(--ipx-down)", bg: "var(--ipx-down-soft)" };
+}
+
 export function computeBacktest(closedPreds) {
   const rows = (closedPreds || [])
     .filter((p) => p.statut_reussite != null && p.ecart_pourcentage != null)
@@ -234,39 +256,43 @@ export function computeBacktest(closedPreds) {
 
   const total = rows.length;
   if (total === 0) {
-    return { total: 0, wins: 0, hitRate: 0, avgReturn: 0, series: [], monthly: [], recent: [] };
+    return {
+      total: 0, wins: 0, partial: 0, missed: 0, hitRate: 0, directionalRate: 0,
+      avgReturn: 0, series: [], monthly: [], recent: [],
+    };
   }
 
   let wins = 0;
+  let partial = 0;
+  let missed = 0;
   let cumWins = 0;
+  let cumDir = 0; // réussi + partiel (bon sens)
   let sumReturn = 0;
   const series = [];
   const monthlyMap = {};
 
   rows.forEach((p, i) => {
-    const success = p.statut_reussite === true || p.statut_reussite === "true";
-    if (success) {
-      wins += 1;
-      cumWins += 1;
-    }
+    const status = getClosedStatus(p);
+    if (status === "reussi") { wins += 1; cumWins += 1; cumDir += 1; }
+    else if (status === "partiel") { partial += 1; cumDir += 1; }
+    else { missed += 1; }
     sumReturn += Number(p.ecart_pourcentage);
 
-    // Taux de réussite CUMULÉ (courbe qui se lisse dans le temps)
+    // Courbes CUMULÉES : réussite stricte + « bon sens » (réussi + partiel).
     series.push({
       date: p.date_cible,
       hitRate: Math.round((cumWins / (i + 1)) * 100),
+      dirRate: Math.round((cumDir / (i + 1)) * 100),
       ecart: Number(p.ecart_pourcentage),
     });
 
-    // Agrégat mensuel (barres succès vs échec)
+    // Agrégat mensuel à 3 modalités (barres empilées réussi / partiel / manqué).
     const month = String(p.date_cible).slice(0, 7); // YYYY-MM
-    if (!monthlyMap[month]) monthlyMap[month] = { month, success: 0, fail: 0 };
-    if (success) monthlyMap[month].success += 1;
-    else monthlyMap[month].fail += 1;
+    if (!monthlyMap[month]) monthlyMap[month] = { month, reussi: 0, partiel: 0, manque: 0 };
+    monthlyMap[month][status] += 1;
   });
 
-  // Tableau d'écart MODÈLE vs RÉEL : les N dernières prédictions clôturées, du
-  // plus récent au plus ancien (prédit -> réel -> réussite).
+  // Tableau d'écart MODÈLE vs RÉEL : les N dernières prédictions clôturées.
   const recent = rows
     .slice(-24)
     .reverse()
@@ -277,13 +303,16 @@ export function computeBacktest(closedPreds) {
       proba: p.probabilite_modele != null ? Number(p.probabilite_modele) : null,
       score: p.score_sur_10 != null ? Number(p.score_sur_10) : null,
       real: Number(p.ecart_pourcentage),
-      success: p.statut_reussite === true || p.statut_reussite === "true",
+      status: getClosedStatus(p),
     }));
 
   return {
     total,
     wins,
+    partial,
+    missed,
     hitRate: Math.round((wins / total) * 100),
+    directionalRate: Math.round(((wins + partial) / total) * 100),
     avgReturn: sumReturn / total,
     series,
     monthly: Object.values(monthlyMap),

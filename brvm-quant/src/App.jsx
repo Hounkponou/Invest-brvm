@@ -21,6 +21,45 @@ import Portfolio from './pages/Portfolio';
 import Predictions from './pages/Predictions'; // Nouveau Module Prédictif (autonome, thème Dark/Solar)
 
 // ==========================================
+// MOYENNES MOBILES (MM20 / MM50 / MM100)
+// ==========================================
+// L'historique par titre ne contient que sma_20 (backend). On calcule MM50 et
+// MM100 CÔTÉ CLIENT à partir des clôtures — sur l'historique COMPLET (les valeurs
+// en début de fenêtre visible restent correctes), avant tout filtrage d'horizon.
+const MA_CONFIG = [
+  { win: 20, key: 'sma_20', color: 'var(--warn-color)', label: 'MM20' },
+  { win: 50, key: 'sma_50', color: '#8b5cf6', label: 'MM50' },
+  { win: 100, key: 'sma_100', color: '#14b8a6', label: 'MM100' },
+];
+
+function withMovingAverages(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return rows;
+  const closes = rows.map((r) => Number(r.close));
+  const out = rows.map((r) => ({ ...r }));
+  [50, 100].forEach((win) => {
+    let sum = 0;
+    for (let i = 0; i < out.length; i++) {
+      sum += closes[i];
+      if (i >= win) sum -= closes[i - win];
+      out[i][`sma_${win}`] = i >= win - 1 ? Math.round(sum / win) : null;
+    }
+  });
+  return out;
+}
+
+// Analyse de tendance dérivée des moyennes mobiles (dernier point disponible).
+function movingAverageAnalysis(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const last = rows[rows.length - 1];
+  const price = Number(last.close);
+  const above = (k) => (last[k] != null ? price >= Number(last[k]) : null);
+  const cross = last.sma_50 != null && last.sma_100 != null
+    ? (Number(last.sma_50) >= Number(last.sma_100) ? 'golden' : 'death')
+    : null;
+  return { price, above20: above('sma_20'), above50: above('sma_50'), above100: above('sma_100'), cross };
+}
+
+// ==========================================
 // ALGORITHME QUANT PRO : ATR & VOLATILITÉ
 // ==========================================
 const calculateTradingPoints = (stock) => {
@@ -100,7 +139,9 @@ export default function App() {
   const [selectedStock, setSelectedStock] = useState(null);
   const [stockHistory, setStockHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [chartHorizon, setChartHorizon] = useState('ALL'); 
+  const [chartHorizon, setChartHorizon] = useState('ALL');
+  // Visibilité des moyennes mobiles (l'utilisateur affiche celles qu'il veut).
+  const [visibleMA, setVisibleMA] = useState({ 20: true, 50: true, 100: false });
 
   const [simCapital, setSimCapital] = useState(1000000);
   const [simStrategy, setSimStrategy] = useState('value');
@@ -367,11 +408,16 @@ export default function App() {
   // ==========================================
   // 4. CALCULS MÉMORISÉS (useMemo)
   // ==========================================
+  // MM50/MM100 calculées sur l'historique COMPLET (valeurs correctes en début de
+  // fenêtre), puis on filtre par horizon.
+  const historyWithMA = useMemo(() => withMovingAverages(stockHistory), [stockHistory]);
   const displayedHistory = useMemo(() => {
-    if (chartHorizon === 'ALL') return stockHistory;
+    if (chartHorizon === 'ALL') return historyWithMA;
     const cutoffDate = new Date(); cutoffDate.setDate(cutoffDate.getDate() - parseInt(chartHorizon));
-    return stockHistory.filter(d => d.date >= cutoffDate.toISOString().split('T')[0]);
-  }, [stockHistory, chartHorizon]);
+    return historyWithMA.filter(d => d.date >= cutoffDate.toISOString().split('T')[0]);
+  }, [historyWithMA, chartHorizon]);
+  // Analyse de tendance (moyennes mobiles) sur la dernière valeur connue.
+  const maAnalysis = useMemo(() => movingAverageAnalysis(historyWithMA), [historyWithMA]);
 
   const globallyFilteredMarket = useMemo(() => marketData.filter(i => 
     (i.nom.toLowerCase().includes(searchQuery.toLowerCase()) || i.symbole.toLowerCase().includes(searchQuery.toLowerCase())) && 
@@ -531,7 +577,33 @@ export default function App() {
               <span style={{ color: 'var(--text-muted)', fontSize: '1.2em', marginRight: '15px' }}>{selectedStock.symbole} • {getSector(selectedStock.symbole)}</span>
               <span style={{ color: selectedStock.variation >= 0 ? 'var(--up-color)' : 'var(--down-color)', fontSize: '1.2em', fontWeight: 'bold' }}>{selectedStock.close?.toLocaleString()} F ({selectedStock.variation >= 0 ? '+' : ''}{selectedStock.variation}%)</span>
             </div>
-            <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+              {/* Toggles moyennes mobiles : l'utilisateur affiche celles qu'il veut */}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {MA_CONFIG.map(({ win, color, label }) => {
+                  const on = visibleMA[win];
+                  return (
+                    <button
+                      key={win}
+                      type="button"
+                      onClick={() => setVisibleMA((v) => ({ ...v, [win]: !v[win] }))}
+                      title={`Afficher/masquer la moyenne mobile ${win} jours`}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '8px 12px', borderRadius: '8px', cursor: 'pointer',
+                        fontWeight: 700, fontSize: '0.85em',
+                        border: `1px solid ${on ? color : 'var(--border-color)'}`,
+                        background: on ? 'var(--bg-panel)' : 'transparent',
+                        color: on ? 'var(--text-main)' : 'var(--text-muted)',
+                        opacity: on ? 1 : 0.6,
+                      }}
+                    >
+                      <span style={{ width: 14, height: 3, borderRadius: 2, background: color, opacity: on ? 1 : 0.4 }} />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
               <select value={chartHorizon} onChange={(e) => setChartHorizon(e.target.value)} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', color: 'var(--text-main)', cursor: 'pointer', fontWeight: 'bold' }}>
                 <option value="30">Zoom 1 Mois</option>
                 <option value="180">Zoom 6 Mois</option>
@@ -598,6 +670,36 @@ export default function App() {
             />
           </div>
 
+          {/* ANALYSE TENDANCE PAR MOYENNES MOBILES */}
+          {!loadingHistory && maAnalysis && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Tendance (moyennes mobiles) :</span>
+              {[
+                { lbl: 'Cours vs MM20', v: maAnalysis.above20, hint: 'court terme' },
+                { lbl: 'Cours vs MM50', v: maAnalysis.above50, hint: 'moyen terme' },
+                { lbl: 'Cours vs MM100', v: maAnalysis.above100, hint: 'long terme' },
+              ].map(({ lbl, v, hint }) => (
+                <span key={lbl} title={hint} style={{
+                  fontSize: '0.82em', fontWeight: 700, padding: '5px 10px', borderRadius: '20px',
+                  color: v == null ? 'var(--text-muted)' : v ? 'var(--up-color)' : 'var(--down-color)',
+                  background: 'var(--bg-base)', border: '1px solid var(--border-color)',
+                }}>
+                  {lbl} : {v == null ? 'N/A' : v ? 'au-dessus ▲' : 'en-dessous ▼'}
+                </span>
+              ))}
+              {maAnalysis.cross && (
+                <span style={{
+                  fontSize: '0.82em', fontWeight: 700, padding: '5px 10px', borderRadius: '20px',
+                  color: maAnalysis.cross === 'golden' ? 'var(--up-color)' : 'var(--down-color)',
+                  background: maAnalysis.cross === 'golden' ? 'var(--up-soft, var(--bg-base))' : 'var(--down-soft, var(--bg-base))',
+                  border: `1px solid ${maAnalysis.cross === 'golden' ? 'var(--up-color)' : 'var(--down-color)'}`,
+                }}>
+                  {maAnalysis.cross === 'golden' ? 'MM50 > MM100 · tendance de fond haussière' : 'MM50 < MM100 · tendance de fond baissière'}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* ZONE DE GRAPHIQUES HISTORIQUES */}
           <div style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', minHeight: '350px' }}>
             {loadingHistory ? <div className="skeleton" style={{ width: '100%', height: '100%', minHeight: '310px' }} /> : (
@@ -610,7 +712,9 @@ export default function App() {
                   <YAxis yAxisId="right" orientation="right" display="none" />
                   <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-base)', borderColor: 'var(--border-color)' }} labelStyle={{ color: 'var(--text-muted)' }} />
                   <Area yAxisId="left" type="monotone" dataKey="close" name="Cours de Clôture" stroke="var(--accent-blue)" strokeWidth={3} fillOpacity={1} fill="url(#colorClose)" />
-                  <Line yAxisId="left" type="monotone" dataKey="sma_20" name="Moyenne 20J" stroke="var(--warn-color)" dot={false} strokeWidth={2} strokeDasharray="5 5" />
+                  {visibleMA[20] && <Line yAxisId="left" type="monotone" dataKey="sma_20" name="Moyenne 20J" stroke="var(--warn-color)" dot={false} strokeWidth={2} strokeDasharray="5 5" connectNulls />}
+                  {visibleMA[50] && <Line yAxisId="left" type="monotone" dataKey="sma_50" name="Moyenne 50J" stroke="#8b5cf6" dot={false} strokeWidth={2} connectNulls />}
+                  {visibleMA[100] && <Line yAxisId="left" type="monotone" dataKey="sma_100" name="Moyenne 100J" stroke="#14b8a6" dot={false} strokeWidth={2} connectNulls />}
                   <Bar yAxisId="right" dataKey="volume" name="Volume Échangé" fill="var(--text-muted)" opacity={0.15} />
                 </ComposedChart>
               </ResponsiveContainer>

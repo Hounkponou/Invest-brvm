@@ -14,16 +14,18 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  Line,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ReferenceLine,
 } from "recharts";
 import StatCard from "./StatCard";
-import { formatPct, getPnlColor, getScoreColor } from "../../utils/predictionHelpers";
+import { formatPct, getPnlColor, getScoreColor, getClosedStatusMeta } from "../../utils/predictionHelpers";
 
 /** Style commun des tooltips Recharts, aligné sur le thème. */
 const tooltipStyle = {
@@ -34,7 +36,7 @@ const tooltipStyle = {
 };
 
 export default function BacktestPanel({ backtest }) {
-  const { total, hitRate, avgReturn, series, monthly, recent = [] } = backtest;
+  const { total, hitRate, directionalRate, partial, avgReturn, series, monthly, recent = [] } = backtest;
 
   // Cas « pas encore de résultats » : message pédagogique, pas d'écran vide
   if (!total) {
@@ -50,13 +52,19 @@ export default function BacktestPanel({ backtest }) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* --- KPI de tête (grille mobile-first) --- */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* --- KPI de tête (grille mobile-first) : 3 modalités mises en avant --- */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
           label="Taux de réussite"
           value={`${hitRate} %`}
           accent={hitRate >= 55 ? "var(--ipx-up)" : hitRate >= 45 ? "var(--ipx-warn)" : "var(--ipx-down)"}
           hint="Objectif atteint à l'horizon"
+        />
+        <StatCard
+          label="Bon sens"
+          value={`${directionalRate} %`}
+          accent={directionalRate >= 60 ? "var(--ipx-up)" : "var(--ipx-warn)"}
+          hint={`Réussis + partiels (${partial} partiels)`}
         />
         <StatCard label="Signaux jugés" value={total} accent="var(--ipx-accent)" hint="Prédictions clôturées" />
         <StatCard
@@ -102,15 +110,17 @@ export default function BacktestPanel({ backtest }) {
                       {formatPct(r.real)}
                     </td>
                     <td className="py-2 text-right">
-                      <span
-                        className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-                        style={{
-                          color: r.success ? "var(--ipx-up)" : "var(--ipx-down)",
-                          backgroundColor: r.success ? "var(--ipx-up-soft)" : "var(--ipx-down-soft)",
-                        }}
-                      >
-                        {r.success ? "Réussi" : "Manqué"}
-                      </span>
+                      {(() => {
+                        const m = getClosedStatusMeta(r.status);
+                        return (
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+                            style={{ color: m.color, backgroundColor: m.bg }}
+                          >
+                            {m.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -120,7 +130,7 @@ export default function BacktestPanel({ backtest }) {
         </div>
       )}
 
-      {/* --- Courbe du taux de réussite cumulé --- */}
+      {/* --- Courbe cumulée : réussite stricte + bon sens (réussi + partiel) --- */}
       <div className="rounded-2xl border border-border bg-surface p-4">
         <h4 className="mb-3 text-sm font-bold text-fg">Fiabilité cumulée du modèle</h4>
         <div className="h-56 w-full">
@@ -135,22 +145,33 @@ export default function BacktestPanel({ backtest }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--ipx-border)" vertical={false} />
               <XAxis dataKey="date" stroke="var(--ipx-muted)" tick={{ fontSize: 11 }} minTickGap={40} />
               <YAxis stroke="var(--ipx-muted)" domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" width={40} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`${v} %`, "Réussite cumulée"]} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v, n) => [`${v} %`, n]} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
               {/* Ligne de référence 50 % = hasard */}
               <ReferenceLine y={50} stroke="var(--ipx-muted)" strokeDasharray="4 4" />
               <Area
                 type="monotone"
                 dataKey="hitRate"
+                name="Réussite"
                 stroke="var(--ipx-accent)"
                 strokeWidth={3}
                 fill="url(#ipxHit)"
+              />
+              <Line
+                type="monotone"
+                dataKey="dirRate"
+                name="Bon sens"
+                stroke="var(--ipx-warn)"
+                strokeWidth={2}
+                strokeDasharray="5 4"
+                dot={false}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* --- Histogramme mensuel succès / échec --- */}
+      {/* --- Histogramme mensuel à 3 modalités (réussi / partiel / manqué) --- */}
       <div className="rounded-2xl border border-border bg-surface p-4">
         <h4 className="mb-3 text-sm font-bold text-fg">Résultats par mois</h4>
         <div className="h-56 w-full">
@@ -160,8 +181,10 @@ export default function BacktestPanel({ backtest }) {
               <XAxis dataKey="month" stroke="var(--ipx-muted)" tick={{ fontSize: 11 }} />
               <YAxis stroke="var(--ipx-muted)" tick={{ fontSize: 11 }} allowDecimals={false} width={30} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="success" name="Réussis" stackId="a" fill="var(--ipx-up)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="fail" name="Échoués" stackId="a" fill="var(--ipx-down)" radius={[4, 4, 0, 0]} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="reussi" name="Réussis" stackId="a" fill="var(--ipx-up)" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="partiel" name="Partiels" stackId="a" fill="var(--ipx-warn)" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="manque" name="Manqués" stackId="a" fill="var(--ipx-down)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

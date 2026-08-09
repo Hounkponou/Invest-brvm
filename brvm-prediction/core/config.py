@@ -30,7 +30,11 @@ GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip() or None
 
 # Paramètres globaux du modèle
 HORIZON_JOURS = 15
-TARGET_RETURN = 0.035
+# Cible de rendement à l'horizon. Abaissée de 3.5 % -> 2 % : objectif plus
+# atteignable (marché peu volatil), donc davantage de signaux positifs et un
+# taux de réussite potentiellement meilleur. Le label d'entraînement, l'évaluation
+# et l'affichage front sont tous alignés sur cette valeur.
+TARGET_RETURN = 0.02
 
 # Dossier des modèles ANCRÉ au projet (chemin absolu) : peu importe le répertoire
 # depuis lequel on lance `python main.py`, les artefacts (modèle, calibrateur,
