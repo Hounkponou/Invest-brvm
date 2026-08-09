@@ -80,8 +80,9 @@ export default function Simulator() {
           <h3 style={{ margin: '0 0 4px 0', color: 'var(--text-main)' }}>Preuve de concept sur 3 ans</h3>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.8em', marginBottom: '15px' }}>
             Vous investissez <strong style={{ color: 'var(--text-main)' }}>{fcfa(backtestResult.investedNow)}</strong> aujourd'hui
-            (= somme des allocations ci-dessous) · portefeuille optimisé ({backtestResult.objectiveLabel}) ·
-            <em> historique 3 ans illustratif (in-sample)</em>.
+            (= somme des allocations ci-dessous)
+            {backtestResult.cashRestant > 0 && <> · reste <strong style={{ color: 'var(--text-main)' }}>{fcfa(backtestResult.cashRestant)}</strong> en liquidités (actions entières)</>} ·
+            portefeuille optimisé ({backtestResult.objectiveLabel}) · <em>historique 3 ans illustratif (in-sample)</em>.
           </div>
           <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div>

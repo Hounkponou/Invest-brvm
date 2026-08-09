@@ -424,29 +424,43 @@ export default function App() {
       }
 
       // 4. Portefeuille à ACHETER AUJOURD'HUI (un seul compte d'actions, cohérent
-      //    entre cartes, capital investi et backtest). On raisonne en actions
-      //    ENTIÈRES achetées au cours actuel ; on regarde ensuite leur valeur il y
-      //    a 3 ans pour la « preuve de concept ».
-      let investedNow = 0, value3yAgo = 0, dividends3y = 0;
+      //    entre cartes, capital investi et backtest). Actions ENTIÈRES au cours
+      //    actuel ; on regarde ensuite leur valeur il y a 3 ans (preuve de concept).
       const newPort = [];
       weights.forEach(({ symbole, weight }) => {
         const item = bySym[symbole];
         const rows = (historyBySymbol[symbole] || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
         const pastPrice = rows.length ? Number(rows[0].close) : item.close;
         const sigma = stats[symbole]?.sigma || 0.2;
-        const allocAmount = simCapital * weight;
-        const sharesNow = Math.floor(allocAmount / item.close);
+        const sharesNow = Math.floor((simCapital * weight) / item.close);
         if (sharesNow <= 0) return;                       // trop cher pour 1 action -> ignoré
-        const costNow = sharesNow * item.close;
-        investedNow += costNow;
-        value3yAgo += sharesNow * pastPrice;
-        dividends3y += (sharesNow * pastPrice) * ((item.rendement_dividende || 0) / 100) * 3;
-        newPort.push({ sigle: symbole, nom: item.nom, shares: sharesNow, buyPrice: item.close, total: costNow, yield: item.rendement_dividende || 0, sigma });
+        newPort.push({ sigle: symbole, nom: item.nom, shares: sharesNow, buyPrice: item.close, pastPrice, yield: item.rendement_dividende || 0, sigma, targetWeight: weight });
       });
 
-      // Poids RÉELS = part de l'investissement effectif (somme = 100 %, aligné aux « Alloué »).
-      let portVar = 0;
+      // REMPLISSAGE du cash résiduel : l'arrondi à l'action entière laisse du cash
+      // inutilisé (parfois beaucoup si un titre est cher). On rachète des actions
+      // ENTIÈRES avec le reste, en visant à chaque fois le titre le plus SOUS-alloué
+      // vs sa cible -> on déploie ~tout le capital tout en respectant les proportions.
+      let remaining = simCapital - newPort.reduce((a, p) => a + p.shares * p.buyPrice, 0);
+      for (let guard = 0; guard < 10000; guard++) {
+        const affordable = newPort.filter(p => p.buyPrice <= remaining);
+        if (affordable.length === 0) break;               // reste < action la moins chère
+        affordable.sort((a, b) =>
+          (b.targetWeight * simCapital - b.shares * b.buyPrice) - (a.targetWeight * simCapital - a.shares * a.buyPrice));
+        affordable[0].shares += 1;
+        remaining -= affordable[0].buyPrice;
+      }
+
+      // Totaux APRÈS remplissage + poids réels (somme = 100 %, alignés aux « Alloué »).
+      let investedNow = 0, value3yAgo = 0, dividends3y = 0, portVar = 0;
+      newPort.forEach(p => {
+        p.total = p.shares * p.buyPrice;
+        investedNow += p.total;
+        value3yAgo += p.shares * p.pastPrice;
+        dividends3y += (p.shares * p.pastPrice) * ((p.yield || 0) / 100) * 3;
+      });
       newPort.forEach(p => { p.weight = investedNow > 0 ? p.total / investedNow : 0; portVar += (p.weight * p.sigma) ** 2; });
+      const cashRestant = Math.max(0, Math.round(simCapital - investedNow));
       setProposedPortfolio(newPort);
 
       // 5. Preuve de concept + PROJECTION (base = ce qu'on investit AUJOURD'HUI).
@@ -459,6 +473,8 @@ export default function App() {
 
       setBacktestResult({
         investedNow: Math.round(investedNow),   // = somme des « Alloué » des cartes
+        capital: Math.round(simCapital),
+        cashRestant,
         value3yAgo: Math.round(value3yAgo),
         capitalGain: Math.round(capitalGain),
         dividends: Math.round(dividends3y),
