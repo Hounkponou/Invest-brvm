@@ -423,8 +423,11 @@ export default function App() {
         weights = shortlist.slice(0, 4).map(s => ({ symbole: s.symbole, weight: 0.25 }));
       }
 
-      // 4. Backtest avec les poids OPTIMISÉS (logique plus-value + dividendes cohérente).
-      let initialBacktestValue = 0, finalCapitalValue = 0, totalDividendsCollected = 0, portVar = 0;
+      // 4. Portefeuille à ACHETER AUJOURD'HUI (un seul compte d'actions, cohérent
+      //    entre cartes, capital investi et backtest). On raisonne en actions
+      //    ENTIÈRES achetées au cours actuel ; on regarde ensuite leur valeur il y
+      //    a 3 ans pour la « preuve de concept ».
+      let investedNow = 0, value3yAgo = 0, dividends3y = 0;
       const newPort = [];
       weights.forEach(({ symbole, weight }) => {
         const item = bySym[symbole];
@@ -432,33 +435,35 @@ export default function App() {
         const pastPrice = rows.length ? Number(rows[0].close) : item.close;
         const sigma = stats[symbole]?.sigma || 0.2;
         const allocAmount = simCapital * weight;
-        const sharesToBuyNow = Math.floor(allocAmount / item.close);
-        const sharesBoughtPast = Math.floor(allocAmount / pastPrice);
-        initialBacktestValue += sharesBoughtPast * pastPrice;
-        finalCapitalValue += sharesBoughtPast * item.close;
-        totalDividendsCollected += (sharesBoughtPast * pastPrice) * ((item.rendement_dividende || 0) / 100) * 3;
-        portVar += (weight * sigma) ** 2;
-        newPort.push({ sigle: symbole, nom: item.nom, shares: sharesToBuyNow, buyPrice: item.close, total: sharesToBuyNow * item.close, weight, yield: item.rendement_dividende || 0 });
+        const sharesNow = Math.floor(allocAmount / item.close);
+        if (sharesNow <= 0) return;                       // trop cher pour 1 action -> ignoré
+        const costNow = sharesNow * item.close;
+        investedNow += costNow;
+        value3yAgo += sharesNow * pastPrice;
+        dividends3y += (sharesNow * pastPrice) * ((item.rendement_dividende || 0) / 100) * 3;
+        newPort.push({ sigle: symbole, nom: item.nom, shares: sharesNow, buyPrice: item.close, total: costNow, yield: item.rendement_dividende || 0, sigma });
       });
 
-      setProposedPortfolio(newPort.filter(p => p.shares > 0));
+      // Poids RÉELS = part de l'investissement effectif (somme = 100 %, aligné aux « Alloué »).
+      let portVar = 0;
+      newPort.forEach(p => { p.weight = investedNow > 0 ? p.total / investedNow : 0; portVar += (p.weight * p.sigma) ** 2; });
+      setProposedPortfolio(newPort);
 
-      const totalReturnVal = finalCapitalValue + totalDividendsCollected;
-      // 5. PROJECTION à scénarios (à partir du rendement/volatilité du portefeuille).
-      const capAnnual = (initialBacktestValue > 0 && finalCapitalValue > 0)
-        ? Math.pow(finalCapitalValue / initialBacktestValue, 1 / 3) - 1 : 0;
+      // 5. Preuve de concept + PROJECTION (base = ce qu'on investit AUJOURD'HUI).
+      const capitalGain = investedNow - value3yAgo;
+      const perf3y = value3yAgo > 0 ? ((capitalGain + dividends3y) / value3yAgo) * 100 : 0;
+      const capAnnual = (value3yAgo > 0 && investedNow > 0) ? Math.pow(investedNow / value3yAgo, 1 / 3) - 1 : 0;
       const annualVol = Math.sqrt(portVar);
-      const divYieldAnnual = initialBacktestValue > 0 ? (totalDividendsCollected / initialBacktestValue) / 3 : 0;
-      const projection = projectScenarios(Math.round(initialBacktestValue), capAnnual, annualVol, divYieldAnnual, 5);
+      const divYieldAnnual = value3yAgo > 0 ? (dividends3y / value3yAgo) / 3 : 0;
+      const projection = projectScenarios(Math.round(investedNow), capAnnual, annualVol, divYieldAnnual, 5);
 
       setBacktestResult({
-        initial: Math.round(initialBacktestValue),
-        finalCapital: Math.round(finalCapitalValue),
-        capitalGain: Math.round(finalCapitalValue - initialBacktestValue),
-        dividends: Math.round(totalDividendsCollected),
-        totalReturnVal: Math.round(totalReturnVal),
-        perfTotal: initialBacktestValue > 0 ? ((totalReturnVal - initialBacktestValue) / initialBacktestValue) * 100 : 0,
-        annualReturn: (capAnnual + divYieldAnnual) * 100,   // total annualisé (capital + dividende)
+        investedNow: Math.round(investedNow),   // = somme des « Alloué » des cartes
+        value3yAgo: Math.round(value3yAgo),
+        capitalGain: Math.round(capitalGain),
+        dividends: Math.round(dividends3y),
+        perf3y,
+        annualReturn: (capAnnual + divYieldAnnual) * 100,
         annualVol: annualVol * 100,
         projection,
         objectiveLabel: 'Rendement/risque, cohérent avec la méthode',

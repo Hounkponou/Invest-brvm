@@ -79,16 +79,17 @@ export default function Simulator() {
         <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--accent-blue)', borderRadius: '10px', padding: '20px', marginBottom: '30px' }}>
           <h3 style={{ margin: '0 0 4px 0', color: 'var(--text-main)' }}>Preuve de concept sur 3 ans</h3>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.8em', marginBottom: '15px' }}>
-            Sur les {fcfa(backtestResult.initial)} réellement investis · portefeuille optimisé ({backtestResult.objectiveLabel}) ·
-            <em> backtest illustratif (in-sample)</em>.
+            Vous investissez <strong style={{ color: 'var(--text-main)' }}>{fcfa(backtestResult.investedNow)}</strong> aujourd'hui
+            (= somme des allocations ci-dessous) · portefeuille optimisé ({backtestResult.objectiveLabel}) ·
+            <em> historique 3 ans illustratif (in-sample)</em>.
           </div>
           <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>Capital investi</div>
-              <div style={{ fontSize: '1.2em', color: 'var(--text-main)' }}>{fcfa(backtestResult.initial)}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>Il y a 3 ans, il valait</div>
+              <div style={{ fontSize: '1.2em', color: 'var(--text-main)' }}>{fcfa(backtestResult.value3yAgo)}</div>
             </div>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>Plus-value</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>Plus-value 3 ans</div>
               <div style={{ fontSize: '1.2em', fontWeight: 'bold', color: backtestResult.capitalGain >= 0 ? 'var(--up-color)' : 'var(--down-color)' }}>
                 {backtestResult.capitalGain >= 0 ? '+ ' : '- '}{fcfa(Math.abs(backtestResult.capitalGain))}
               </div>
@@ -98,11 +99,11 @@ export default function Simulator() {
               <div style={{ fontSize: '1.2em', color: 'var(--accent-blue)' }}>+ {fcfa(backtestResult.dividends)}</div>
             </div>
             <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '30px' }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em', textTransform: 'uppercase' }}>Valeur totale</div>
-              <div style={{ fontSize: '1.8em', color: backtestResult.perfTotal >= 0 ? 'var(--up-color)' : 'var(--down-color)', fontWeight: 'bold' }}>
-                {fcfa(backtestResult.totalReturnVal)}
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em', textTransform: 'uppercase' }}>Valeur aujourd'hui</div>
+              <div style={{ fontSize: '1.8em', color: backtestResult.perf3y >= 0 ? 'var(--up-color)' : 'var(--down-color)', fontWeight: 'bold' }}>
+                {fcfa(backtestResult.investedNow)}
                 <span style={{ fontSize: '0.6em', marginLeft: '10px' }}>
-                  ({backtestResult.perfTotal > 0 ? '+' : ''}{backtestResult.perfTotal.toFixed(2)}%)
+                  ({backtestResult.perf3y > 0 ? '+' : ''}{backtestResult.perf3y.toFixed(2)}% sur 3 ans)
                 </span>
               </div>
             </div>
