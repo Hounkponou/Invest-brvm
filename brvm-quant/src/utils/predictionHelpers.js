@@ -33,6 +33,8 @@ export function getSignalMeta(signal) {
       return { color: "var(--ipx-up)", bg: "var(--ipx-up-soft)", strength: 1, label: "Achat Fort" };
     case "Achat Modéré":
       return { color: "var(--ipx-warn)", bg: "var(--ipx-warn-soft)", strength: 0.6, label: "Achat Modéré" };
+    case "Vente":
+      return { color: "var(--ipx-down)", bg: "var(--ipx-down-soft)", strength: 1, label: "Vente" };
     default:
       return { color: "var(--ipx-muted)", bg: "var(--ipx-surface-2)", strength: 0.25, label: "Conserver" };
   }
@@ -43,6 +45,21 @@ export function getScoreColor(score) {
   if (score >= 7) return "var(--ipx-up)";
   if (score >= 5) return "var(--ipx-warn)";
   return "var(--ipx-down)";
+}
+
+// ===========================================================================
+// HORIZONS MULTIPLES (miroir de core.config.HORIZONS côté backend)
+// ===========================================================================
+export const HORIZONS = [
+  { days: 5, key: "court", target: 1, label: "Court terme", short: "Court · 5 j" },
+  { days: 20, key: "moyen", target: 2, label: "Moyen terme", short: "Moyen · 20 j" },
+  { days: 60, key: "long", target: 4, label: "Long terme", short: "Long · 60 j" },
+];
+
+/** Cible de rendement (%) d'un horizon (jours). Défaut 2 % (moyen). */
+export function horizonTarget(days) {
+  const h = HORIZONS.find((x) => x.days === Number(days));
+  return h ? h.target : 2;
 }
 
 // ===========================================================================
@@ -89,13 +106,15 @@ export function getDuelVerdict(modelScore, gemini) {
 export function getFinalDirective(pred, gemini) {
   const signal = getSignal(pred);
   const modelBull = signal === "Achat Fort" ? 2 : signal === "Achat Modéré" ? 1 : 0;
+  const modelBear = signal === "Vente";
   const iaReco = gemini?.recommandation;
   const iaBull = iaReco === "Achat fort" ? 2 : iaReco === "Achat modéré" ? 1
     : iaReco === "Vente" ? -1 : iaReco === "Conservation" ? 0 : null;
 
-  // Modèle seul haussier -> ACHAT ; sinon CONSERVER. L'IA peut faire basculer en VENTE.
-  let label = modelBull >= 1 ? "ACHAT" : "CONSERVER";
-  if (iaBull === -1 && modelBull === 0) label = "VENTE";
+  // Modèle haussier -> ACHAT ; modèle baissier -> VENTE ; sinon CONSERVER.
+  // L'IA (Gemini) peut aussi faire basculer un « Conserver » modèle en VENTE.
+  let label = modelBull >= 1 ? "ACHAT" : modelBear ? "VENTE" : "CONSERVER";
+  if (iaBull === -1 && modelBull === 0 && !modelBear) label = "VENTE";
   const diverge = iaBull != null && ((modelBull >= 1) !== (iaBull >= 1));
 
   const meta = label === "ACHAT"
@@ -249,9 +268,11 @@ export function getClosedStatusMeta(status) {
   return { label: "Manqué", color: "var(--ipx-down)", bg: "var(--ipx-down-soft)" };
 }
 
-export function computeBacktest(closedPreds) {
+export function computeBacktest(closedPreds, horizonDays = null) {
   const rows = (closedPreds || [])
     .filter((p) => p.statut_reussite != null && p.ecart_pourcentage != null)
+    // Filtre optionnel par horizon (challenge harmonisé avec le sélecteur d'horizon).
+    .filter((p) => horizonDays == null || Number(p.horizon_jours) === Number(horizonDays))
     .sort((a, b) => (a.date_cible < b.date_cible ? -1 : 1));
 
   const total = rows.length;

@@ -28,13 +28,21 @@ import StatCard from "../components/prediction/StatCard";
 import GeminiRecoPanel from "../components/prediction/GeminiRecoPanel";
 import { FilterChips } from "../components/filters";
 import { getSector } from "../utils/brvmConfig";
-import { computeBacktest, getSignal, getScore10, getGeminiScore10 } from "../utils/predictionHelpers";
+import { computeBacktest, getSignal, getScore10, getGeminiScore10, HORIZONS } from "../utils/predictionHelpers";
 
-// Options de filtre sur la force du signal
+// Options de filtre sur le TYPE de signal (4 modalités).
 const FILTERS = [
   { key: "all", label: "Tous" },
   { key: "Achat Fort", label: "Achat Fort" },
   { key: "Achat Modéré", label: "Achat Modéré" },
+  { key: "Conserver", label: "Conserver" },
+  { key: "Vente", label: "Vente" },
+];
+
+// Sélecteur d'horizon (Court/Moyen/Long/Tous) — s'applique aux deux onglets.
+const HORIZON_OPTIONS = [
+  ...HORIZONS.map((h) => ({ key: h.days, label: h.short })),
+  { key: "all", label: "Tous" },
 ];
 
 export default function Predictions() {
@@ -49,8 +57,9 @@ export default function Predictions() {
   const { bySymbol: seasonBySymbol } = useSeasonality();
 
   const [tab, setTab] = useState("signals"); // "signals" | "challenge"
-  const [filter, setFilter] = useState("all"); // force du signal (filtre local)
+  const [filter, setFilter] = useState("all"); // type de signal (filtre local)
   const [sortMode, setSortMode] = useState("modele"); // "modele" | "ia"
+  const [horizon, setHorizon] = useState(20); // 5 | 20 | 60 | "all" (défaut moyen)
 
   // Accès O(1) aux fondamentaux marché par symbole (justification du score).
   const marketBySymbol = useMemo(() => {
@@ -59,14 +68,19 @@ export default function Predictions() {
     return m;
   }, [marketData]);
 
-  // Backtest dérivé des prédictions clôturées (mémoïsé)
-  const backtest = useMemo(() => computeBacktest(closed), [closed]);
+  // Backtest dérivé des prédictions clôturées, FILTRÉ par l'horizon (harmonisé).
+  const backtest = useMemo(
+    () => computeBacktest(closed, horizon === "all" ? null : horizon),
+    [closed, horizon]
+  );
 
-  // Signaux du jour filtrés : force du signal + recherche + secteur (globaux)
+  // Signaux du jour filtrés : horizon + type de signal + recherche + secteur (globaux)
   const filteredLive = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return live.filter((p) => {
-      // 1. Force du signal (filtre local)
+      // 0. Horizon sélectionné (Court/Moyen/Long ; "all" = tous les horizons)
+      if (horizon !== "all" && Number(p.horizon_jours) !== Number(horizon)) return false;
+      // 1. Type de signal (filtre local)
       if (filter !== "all" && getSignal(p) !== filter) return false;
       // 2. Recherche texte (symbole ou nom) — filtre global du TopHeader
       if (q) {
@@ -77,7 +91,7 @@ export default function Predictions() {
       if (globalSector !== "All" && getSector(p.symbole) !== globalSector) return false;
       return true;
     });
-  }, [live, filter, searchQuery, globalSector]);
+  }, [live, horizon, filter, searchQuery, globalSector]);
 
   // Tri selon le FILTRE choisi : « Modèle » (score quantitatif) ou « IA » (avis
   // Gemini). En mode IA, les titres sans avis passent en fin de liste.
@@ -98,17 +112,21 @@ export default function Predictions() {
   // Y a-t-il au moins un avis Gemini disponible ? (sinon, note en mode « Filtre IA »)
   const hasGemini = useMemo(() => Object.keys(geminiBySymbol || {}).length > 0, [geminiBySymbol]);
 
-  // Compteurs pour les KPI (sur l'ensemble du jour, avant filtre local)
+  // Compteurs KPI (4 modalités) pour l'HORIZON sélectionné, avant filtre local.
   const counts = useMemo(() => {
-    let fort = 0;
-    let modere = 0;
-    live.forEach((p) => {
+    const rows = horizon === "all"
+      ? live
+      : live.filter((p) => Number(p.horizon_jours) === Number(horizon));
+    let fort = 0, modere = 0, conserver = 0, vente = 0;
+    rows.forEach((p) => {
       const s = getSignal(p);
       if (s === "Achat Fort") fort += 1;
       else if (s === "Achat Modéré") modere += 1;
+      else if (s === "Vente") vente += 1;
+      else conserver += 1;
     });
-    return { fort, modere, total: live.length };
-  }, [live]);
+    return { fort, modere, conserver, vente, total: rows.length };
+  }, [live, horizon]);
 
   return (
     <div className="w-full">
@@ -119,7 +137,7 @@ export default function Predictions() {
             Module Prédictif <span className="text-accent">IA</span>
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Signaux XGBoost à 15 jours
+            Signaux XGBoost multi-horizons (5 / 20 / 60 j)
             {latestDate ? ` • séance du ${latestDate}` : ""}
           </p>
         </div>
@@ -134,13 +152,35 @@ export default function Predictions() {
         </button>
       </header>
 
-      {/* ================= KPI SYNTHÈSE ================= */}
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Signaux du jour" value={counts.total} accent="var(--ipx-accent)" />
+      {/* ================= SÉLECTEUR D'HORIZON (commun aux 2 onglets) ======= */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted">Horizon</span>
+        <div className="inline-flex rounded-full border border-border bg-surface p-1">
+          {HORIZON_OPTIONS.map((h) => (
+            <button
+              key={h.key}
+              type="button"
+              onClick={() => setHorizon(h.key)}
+              className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                horizon === h.key ? "text-fg" : "text-muted hover:text-fg"
+              }`}
+              style={horizon === h.key ? { backgroundColor: "var(--ipx-surface-2)" } : undefined}
+            >
+              {h.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ================= KPI SYNTHÈSE (4 modalités) ================= */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <StatCard label="Signaux" value={counts.total} accent="var(--ipx-accent)" />
         <StatCard label="Achat Fort" value={counts.fort} accent="var(--ipx-up)" />
         <StatCard label="Achat Modéré" value={counts.modere} accent="var(--ipx-warn)" />
+        <StatCard label="Conserver" value={counts.conserver} accent="var(--ipx-muted)" />
+        <StatCard label="Vente" value={counts.vente} accent="var(--ipx-down)" />
         <StatCard
-          label="Fiabilité (backtest)"
+          label="Fiabilité"
           value={backtest.total ? `${backtest.hitRate} %` : "—"}
           accent="var(--ipx-fg)"
         />
@@ -246,12 +286,13 @@ export default function Predictions() {
 
       {/* ================= NOTE PÉDAGOGIQUE ================= */}
       <footer className="mt-10 rounded-2xl border border-border bg-surface p-4 text-xs text-muted">
-        <strong className="text-fg">Comment lire ces signaux ?</strong> Le score sur 10
-        traduit la probabilité, calibrée par le modèle, que le titre progresse d'au moins
-        2 % dans les 15 prochains jours. Les signaux sont <strong className="text-fg">relatifs</strong> :
-        chaque séance, « Achat Fort » distingue les meilleures opportunités du jour (top ~10 %)
-        et « Achat Modéré » le top ~25 %, avec un plancher de probabilité pour ne jamais
-        survendre un titre peu convaincant. Le Challenge juge chaque prédiction arrivée à terme en
+        <strong className="text-fg">Comment lire ces signaux ?</strong> Trois horizons — court
+        (5 j, cible +1 %), moyen (20 j, +2 %) et long (60 j, +4 %) —, chacun avec son propre
+        modèle. Le score sur 10 traduit la probabilité calibrée d'atteindre la cible de l'horizon.
+        Les signaux sont <strong className="text-fg">relatifs</strong> à la séance : « Achat Fort »
+        = meilleures opportunités (top ~10 %), « Achat Modéré » le top ~25 %, « Vente » les moins
+        bien classées (bas ~10 %), avec des planchers/plafonds de probabilité pour ne jamais
+        survendre ni suracheter à tort. Le Challenge juge chaque prédiction arrivée à terme en
         <strong className="text-fg"> trois modalités</strong> : <em>réussi</em> (objectif atteint),
         <em> partiel</em> (bon sens, mais objectif non atteint) et <em>manqué</em> (mauvais sens).
         Ceci n'est pas un conseil en investissement.

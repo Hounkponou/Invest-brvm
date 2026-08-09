@@ -25,15 +25,17 @@ import {
   getForecast,
   getTargetPrice,
   buildScoreJustification,
+  horizonTarget,
   formatFcfa,
 } from "../../utils/predictionHelpers";
 
 export default function PredictionCard({ pred, sector, market, gemini, season, onClick }) {
-  const horizon = pred?.horizon_jours || 15;
+  const horizon = pred?.horizon_jours || 20;
+  const targetPct = horizonTarget(horizon); // cible propre à l'horizon (1/2/4 %)
   const score = getScore10(pred);
   const directive = getFinalDirective(pred, gemini);
-  const forecast = getForecast(pred, directive, horizon);
-  const target = getTargetPrice(pred, market, directive, horizon);
+  const forecast = getForecast(pred, directive, horizon, targetPct);
+  const target = getTargetPrice(pred, market, directive, horizon, targetPct);
   const drivers = buildScoreJustification(pred, market, season);
 
   return (
