@@ -18,5 +18,9 @@ alter table log_predictions alter column horizon_jours set not null;
 create unique index if not exists log_predictions_date_sym_hor_uidx
     on log_predictions (date_prediction, symbole, horizon_jours);
 
--- 3. Retrait de l'ancienne clé 2 colonnes (si elle existait).
+-- 3. Retrait de l'ANCIENNE clé d'unicité 2 colonnes (date_prediction, symbole).
+--    Elle bloque l'écriture de plusieurs horizons pour un même titre/séance.
+--    La contrainte réelle s'appelle `unique_prediction_jour` (vu à l'exécution) ;
+--    on retire aussi l'index supposé au cas où.
+alter table log_predictions drop constraint if exists unique_prediction_jour;
 drop index if exists log_predictions_date_symbole_uidx;
