@@ -391,8 +391,18 @@ export default function App() {
         totalDividendsCollected += ((sharesBoughtPast * pastPrice) * ((item.rendement_dividende || 0) / 100) * 3);
         newPort.push({ sigle: item.symbole, nom: item.nom, shares: sharesToBuyNow, buyPrice: item.close, total: sharesToBuyNow * item.close, pastPrice: pastPrice, yield: item.rendement_dividende || 0 });
       });
-      setProposedPortfolio(newPort);
-      setBacktestResult({ initial: initialBacktestValue, finalCapital: finalCapitalValue, dividends: totalDividendsCollected, totalReturnVal: finalCapitalValue + totalDividendsCollected, perfTotal: initialBacktestValue > 0 ? (((finalCapitalValue + totalDividendsCollected) - initialBacktestValue) / initialBacktestValue) * 100 : 0 });
+      // On n'affiche que les positions RÉELLEMENT achetables (>= 1 action) :
+      // une valeur trop chère pour 1 action avec son poids donne 0 -> carte inutile.
+      setProposedPortfolio(newPort.filter(p => p.shares > 0));
+      const totalReturnVal = finalCapitalValue + totalDividendsCollected;
+      setBacktestResult({
+        initial: Math.round(initialBacktestValue),                 // capital réellement investi
+        finalCapital: Math.round(finalCapitalValue),               // valeur finale des actions
+        capitalGain: Math.round(finalCapitalValue - initialBacktestValue), // plus-value
+        dividends: Math.round(totalDividendsCollected),            // dividendes estimés (arrondis)
+        totalReturnVal: Math.round(totalReturnVal),
+        perfTotal: initialBacktestValue > 0 ? ((totalReturnVal - initialBacktestValue) / initialBacktestValue) * 100 : 0,
+      });
     } catch (err) { console.error(err); } setLoadingSim(false);
   };
 

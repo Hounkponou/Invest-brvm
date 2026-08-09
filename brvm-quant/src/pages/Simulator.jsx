@@ -53,20 +53,30 @@ export default function Simulator() {
 
       {backtestResult && (
         <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--accent-blue)', borderRadius: '10px', padding: '20px', marginBottom: '30px' }}>
-          <h3 style={{ margin: '0 0 15px 0', color: 'var(--text-main)' }}>Preuve de concept sur 3 ans</h3>
-          <div style={{ display: 'flex', gap: '30px' }}>
+          <h3 style={{ margin: '0 0 4px 0', color: 'var(--text-main)' }}>Preuve de concept sur 3 ans</h3>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8em', marginBottom: '15px' }}>
+            Sur les {backtestResult.initial.toLocaleString('fr-FR')} F réellement investis (le reste du capital
+            n'achète pas une action entière).
+          </div>
+          <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', alignItems: 'flex-end', fontVariantNumeric: 'tabular-nums' }}>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>Gain Capital</div>
-              <div style={{ fontSize: '1.2em', color: 'var(--text-main)' }}>{backtestResult.finalCapital.toLocaleString()} F</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>Capital investi</div>
+              <div style={{ fontSize: '1.2em', color: 'var(--text-main)' }}>{backtestResult.initial.toLocaleString('fr-FR')} F</div>
             </div>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>Dividendes</div>
-              <div style={{ fontSize: '1.2em', color: 'var(--accent-blue)' }}>+ {backtestResult.dividends.toLocaleString()} F</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>Plus-value</div>
+              <div style={{ fontSize: '1.2em', fontWeight: 'bold', color: backtestResult.capitalGain >= 0 ? 'var(--up-color)' : 'var(--down-color)' }}>
+                {backtestResult.capitalGain >= 0 ? '+ ' : '- '}{Math.abs(backtestResult.capitalGain).toLocaleString('fr-FR')} F
+              </div>
+            </div>
+            <div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>Dividendes (est. 3 ans)</div>
+              <div style={{ fontSize: '1.2em', color: 'var(--accent-blue)' }}>+ {backtestResult.dividends.toLocaleString('fr-FR')} F</div>
             </div>
             <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '30px' }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>TOTAL RETURN</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.8em', textTransform: 'uppercase' }}>Valeur totale</div>
               <div style={{ fontSize: '1.8em', color: backtestResult.perfTotal >= 0 ? 'var(--up-color)' : 'var(--down-color)', fontWeight: 'bold' }}>
-                {backtestResult.totalReturnVal.toLocaleString()} F 
+                {backtestResult.totalReturnVal.toLocaleString('fr-FR')} F
                 <span style={{ fontSize: '0.6em', marginLeft: '10px' }}>
                   ({backtestResult.perfTotal > 0 ? '+' : ''}{backtestResult.perfTotal.toFixed(2)}%)
                 </span>
