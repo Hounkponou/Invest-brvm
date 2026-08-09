@@ -297,7 +297,10 @@ def test_compute_risk_vol_ajustee_exclut_dividende():
     # Le masque du détachement retire la grosse chute -> vol ajustée <= vol brute.
     assert risk["SGBC"]["volatility"]["adj"] <= risk["SGBC"]["volatility"]["raw"]
     assert risk["SGBC"]["liquidity"]["level"] in {"Liquide", "Peu liquide", "Illiquide"}
-    assert risk["SGBC"]["var"]["d95"] < 0
+    # VaR historique par horizon : 1 jour disponible et négative (perte).
+    assert risk["SGBC"]["var"]["horizons"]["1"]["p95"] < 0
+    # VaR à horizon plus long >= (en valeur absolue) VaR 1 jour (perte plus sévère).
+    assert risk["SGBC"]["var"]["horizons"]["10"]["p95"] <= risk["SGBC"]["var"]["horizons"]["1"]["p95"]
 
 
 def test_relative_signal_vente():

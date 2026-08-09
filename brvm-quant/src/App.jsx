@@ -147,6 +147,13 @@ export default function App() {
   const [chartHorizon, setChartHorizon] = useState('ALL');
   // Visibilité des moyennes mobiles (l'utilisateur affiche celles qu'il veut).
   const [visibleMA, setVisibleMA] = useState({ 20: true, 50: true, 100: false });
+  // Détection mobile : le graphique de cours devient défilable horizontalement.
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const [simCapital, setSimCapital] = useState(1000000);
   const [simStrategy, setSimStrategy] = useState('value');
@@ -803,6 +810,9 @@ export default function App() {
           {/* ZONE DE GRAPHIQUES HISTORIQUES */}
           <div className="stock-chart-panel" style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', minHeight: '350px' }}>
             {loadingHistory ? <div className="skeleton" style={{ width: '100%', height: '100%', minHeight: '310px' }} /> : (
+             <div style={{ width: '100%', height: '100%', overflowX: isMobile ? 'auto' : 'visible', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' }}>
+              {isMobile && <div style={{ fontSize: '0.72em', color: 'var(--text-muted)', marginBottom: 4 }}>← faites glisser le graphique →</div>}
+              <div style={{ height: isMobile ? 'calc(100% - 18px)' : '100%', minWidth: isMobile ? `${Math.min(3200, Math.max(680, displayedHistory.length * 6))}px` : '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={displayedHistory}>
                   <defs><linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--accent-blue)" stopOpacity={0.4}/><stop offset="95%" stopColor="var(--accent-blue)" stopOpacity={0}/></linearGradient></defs>
@@ -818,6 +828,8 @@ export default function App() {
                   <Bar yAxisId="right" dataKey="volume" name="Volume Échangé" fill="var(--text-muted)" opacity={0.15} />
                 </ComposedChart>
               </ResponsiveContainer>
+              </div>
+             </div>
             )}
           </div>
 

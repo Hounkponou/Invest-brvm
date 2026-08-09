@@ -43,6 +43,9 @@ TRADING_DAYS = 252
 RECENT_WINDOW = 252          # fenêtre « récente » pour la liquidité (~1 an de bourse)
 EXDIV_WINDOW_DAYS = 3        # ±jours masqués autour du détachement
 
+# Horizons de VaR HISTORIQUE proposés à l'utilisateur (jours de bourse, libellé).
+VAR_HORIZONS = [(1, "1 jour"), (5, "1 semaine"), (10, "2 semaines"), (20, "1 mois")]
+
 
 def get_sector(sym: str) -> str:
     return BRVM_SECTORS.get(sym, "Autres")
@@ -82,6 +85,24 @@ def _hist_var(returns: np.ndarray, q: float) -> float:
     if len(returns) < 20:
         return 0.0
     return float(np.percentile(returns, q * 100))
+
+
+def _var_by_horizon(close: pd.Series) -> dict:
+    """VaR HISTORIQUE (empirique) par horizon : p95, p99 et CVaR (%).
+
+    Pour chaque horizon k, on prend les rendements GLISSANTS sur k jours (vécu réel
+    d'un porteur) et le quantile empirique -> capture les queues épaisses sans loi
+    normale ni mise à l'échelle en √t.
+    """
+    out = {}
+    for k, _label in VAR_HORIZONS:
+        rk = close.pct_change(k).dropna().to_numpy(dtype=float)
+        rk = rk[np.isfinite(rk)]
+        p95, p99 = _hist_var(rk, 0.05), _hist_var(rk, 0.01)
+        tail = rk[rk <= p95] if len(rk) >= 20 else np.array([])
+        cvar = float(tail.mean()) if len(tail) else p95
+        out[str(k)] = {"p95": round(p95 * 100, 2), "p99": round(p99 * 100, 2), "cvar": round(cvar * 100, 2)}
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -141,11 +162,7 @@ def compute_risk(df_raw: pd.DataFrame, ex_div_map: dict | None = None) -> dict:
         else:
             distribution = {"counts": [], "edges": [], "skew": round(skew, 2), "kurt": round(kurt, 2)}
 
-        d95, d99 = _hist_var(arr, 0.05), _hist_var(arr, 0.01)
-        r10 = g["close"].pct_change(10).dropna().to_numpy(dtype=float)
-        h10_95 = _hist_var(r10[np.isfinite(r10)], 0.05)
-        tail = arr[arr <= d95] if len(arr) >= 20 else np.array([])
-        cvar95 = float(tail.mean()) if len(tail) else d95
+        var_horizons = _var_by_horizon(g["close"])
 
         # --- Bêta sectoriel (indice synthétique, titre EXCLU) -------------
         sector = get_sector(sym)
@@ -177,10 +194,7 @@ def compute_risk(df_raw: pd.DataFrame, ex_div_map: dict | None = None) -> dict:
                 "flatDaysPct": round(flat_days_pct * 100, 1),
             },
             "volatility": {"adj": round(vol_adj * 100, 1), "raw": round(vol_raw * 100, 1)},
-            "var": {
-                "d95": round(d95 * 100, 2), "d99": round(d99 * 100, 2),
-                "h10_95": round(h10_95 * 100, 2), "cvar95": round(cvar95 * 100, 2),
-            },
+            "var": {"horizons": var_horizons},
             "distribution": distribution,
             "beta": {
                 "sector": round(beta_sector, 2) if beta_sector is not None else None,
