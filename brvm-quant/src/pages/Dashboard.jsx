@@ -1,16 +1,9 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useOutletContext } from 'react-router-dom';
 import MarketTable from '../components/MarketTable';
-import { getSector } from '../utils/brvmConfig';
 
 export default function Dashboard() {
-  const { loadingMarket, globalSector, marketStats, setSelectedStock, marketData = [], riskBySymbol = {} } = useOutletContext();
-
-  // Marché filtré par secteur (le tri de la table rend Top/Flop natif).
-  const rows = useMemo(
-    () => (marketData || []).filter((i) => globalSector === 'All' || getSector(i.symbole) === globalSector),
-    [marketData, globalSector]
-  );
+  const { loadingMarket, globalSector, marketStats, setSelectedStock, riskBySymbol = {} } = useOutletContext();
 
   if (loadingMarket) {
     return <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-muted)' }}>Synchronisation avec la BRVM en cours...</div>;
@@ -62,12 +55,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* MARCHÉ COMPLET — table triable (clic sur un en-tête pour classer) */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '0 0 12px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>Marché complet</h3>
-            <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>cliquez un en-tête pour trier ↑↓</span>
+          <div style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>
+            → Pour explorer, trier et filtrer l'ensemble des {marketStats.count} valeurs, utilisez le <strong style={{ color: 'var(--text-main)' }}>Screener</strong>.
           </div>
-          <MarketTable items={rows} onSelect={setSelectedStock} riskBySymbol={riskBySymbol} initialSort={{ key: 'variation', dir: 'desc' }} />
         </>
       ) : (
         <div style={{ color: 'var(--text-muted)' }}>Aucune action trouvée.</div>

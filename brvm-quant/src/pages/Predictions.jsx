@@ -9,13 +9,12 @@
 import React, { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import BacktestPanel from "../components/prediction/BacktestPanel";
-import SignalDetail from "../components/prediction/SignalDetail";
 import DataTable, { ScoreBar } from "../components/DataTable";
 import { FilterChips } from "../components/filters";
 import { getSector } from "../utils/brvmConfig";
 import {
   computeBacktest, getSignal, getScore10, getGeminiScore10, getFinalDirective,
-  getTargetPrice, getSeasonMeta, formatFcfa, HORIZONS,
+  getTargetPrice, getSeasonMeta, formatFcfa, horizonTarget, HORIZONS,
 } from "../utils/predictionHelpers";
 
 const FILTERS = [
@@ -31,8 +30,8 @@ const DIR_RANK = { ACHAT: 2, CONSERVER: 1, VENTE: 0 };
 
 export default function Predictions() {
   const {
-    searchQuery = "", globalSector = "All", marketData = [],
-    predictions = {}, geminiBySymbol = {}, seasonBySymbol = {}, riskBySymbol = {},
+    searchQuery = "", globalSector = "All", marketData = [], setSelectedStock,
+    predictions = {}, geminiBySymbol = {}, seasonBySymbol = {},
   } = useOutletContext() || {};
 
   const { live = [], closed = [], latestDate = null, loading = false, error = null, refetch = () => {} } = predictions;
@@ -40,7 +39,6 @@ export default function Predictions() {
   const [tab, setTab] = useState("signals");
   const [filter, setFilter] = useState("all");
   const [horizon, setHorizon] = useState(20);
-  const [selectedSignal, setSelectedSignal] = useState(null); // vue projection + risque
 
   const marketBySymbol = useMemo(() => {
     const m = {};
@@ -96,9 +94,9 @@ export default function Predictions() {
       render: (p) => `${Math.round((p.probabilite_modele || 0) * 100)}%` },
     {
       key: "cible", label: "Cours cible", align: "num", type: "num", hideSm: true,
-      accessor: (p) => getTargetPrice(p, marketBySymbol[p.symbole], getFinalDirective(p, geminiBySymbol[p.symbole]), p.horizon_jours)?.central || 0,
+      accessor: (p) => getTargetPrice(p, marketBySymbol[p.symbole], getFinalDirective(p, geminiBySymbol[p.symbole]), p.horizon_jours, horizonTarget(p.horizon_jours))?.central || 0,
       render: (p) => {
-        const t = getTargetPrice(p, marketBySymbol[p.symbole], getFinalDirective(p, geminiBySymbol[p.symbole]), p.horizon_jours);
+        const t = getTargetPrice(p, marketBySymbol[p.symbole], getFinalDirective(p, geminiBySymbol[p.symbole]), p.horizon_jours, horizonTarget(p.horizon_jours));
         return t ? formatFcfa(t.central) : "—";
       },
     },
@@ -115,8 +113,8 @@ export default function Predictions() {
     },
   ], [geminiBySymbol, seasonBySymbol, marketBySymbol]);
 
-  // Clic sur un signal -> vue dédiée PROJECTION + RISQUE (pas la modale du Screener).
-  const openDetail = (p) => setSelectedSignal(p);
+  // Clic sur un signal -> modale de détail (cours + trajectoires prédites + risque).
+  const openDetail = (p) => { const it = marketBySymbol[p.symbole]; if (it) setSelectedStock?.(it); };
 
   const Stat = ({ label, value, color }) => (
     <span style={{ whiteSpace: "nowrap" }}>
@@ -205,18 +203,6 @@ export default function Predictions() {
         prédiction en <strong style={{ color: "var(--text-main)" }}>trois modalités</strong> (réussi / partiel / manqué).
         Ceci n'est pas un conseil en investissement.
       </footer>
-
-      {/* VUE DÉDIÉE d'un signal : projection + risque (à la place de la modale Screener) */}
-      {selectedSignal && (
-        <SignalDetail
-          signal={selectedSignal}
-          market={marketBySymbol[selectedSignal.symbole]}
-          risk={riskBySymbol[selectedSignal.symbole]}
-          gemini={geminiBySymbol[selectedSignal.symbole]}
-          season={seasonBySymbol[selectedSignal.symbole]}
-          onClose={() => setSelectedSignal(null)}
-        />
-      )}
     </div>
   );
 }

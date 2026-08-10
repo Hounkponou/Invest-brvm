@@ -28,6 +28,7 @@ import usePredictions from './hooks/usePredictions';
 import useGeminiRecos from './hooks/useGeminiRecos';
 import useSeasonality from './hooks/useSeasonality';
 import PredictionAnalysisPanel from './components/PredictionAnalysisPanel';
+import ProjectionChart from './components/prediction/ProjectionChart';
 
 // ==========================================
 // MOYENNES MOBILES (MM20 / MM50 / MM100)
@@ -578,9 +579,9 @@ export default function App() {
 
   const screenerData = useMemo(() => {
       let result = globallyFilteredMarket.filter(i => {
-        // Vérification Valorisation & RSI
-        const passVal = filterVal === 'All' || i.statut_valorisation.includes(filterVal);
-        const passRsi = filterRsi === 'All' || i.statut_rsi.includes(filterRsi);
+        // Vérification Valorisation & RSI (protégé contre les valeurs nulles).
+        const passVal = filterVal === 'All' || (i.statut_valorisation || '').includes(filterVal);
+        const passRsi = filterRsi === 'All' || (i.statut_rsi || '').includes(filterRsi);
         
         // Vérification du Prix (Intervalle libre)
         const currentPrice = i.close || 0;
@@ -844,6 +845,15 @@ export default function App() {
              </div>
             )}
           </div>
+
+          {/* TRAJECTOIRES PRÉDITES (projection) — juste après le graphique du cours */}
+          <ProjectionChart
+            symbol={selectedStock.symbole}
+            predictions={predictions.live}
+            market={selectedStock}
+            risk={riskBySymbol[selectedStock.symbole]}
+            gemini={geminiBySymbol[selectedStock.symbole]}
+          />
 
           {/* SIGNAUX PRÉDICTIFS détaillés (par horizon : directive, duel, justification…) */}
           <PredictionAnalysisPanel

@@ -9,7 +9,7 @@ import React from "react";
 import { ScoreBar } from "./DataTable";
 import {
   getScore10, getGeminiScore10, getFinalDirective, getForecast, getTargetPrice,
-  getDuelVerdict, buildScoreJustification, getSeasonMeta, formatFcfa, HORIZONS,
+  getDuelVerdict, buildScoreJustification, getSeasonMeta, formatFcfa, horizonTarget, HORIZONS,
 } from "../utils/predictionHelpers";
 
 const HLABEL = Object.fromEntries(HORIZONS.map((h) => [h.days, h.label]));
@@ -27,8 +27,9 @@ function HorizonBlock({ pred, market, gemini, season }) {
   const score = getScore10(pred);
   const iaScore = getGeminiScore10(gemini);
   const directive = getFinalDirective(pred, gemini);
-  const forecast = getForecast(pred, directive, pred.horizon_jours);
-  const target = getTargetPrice(pred, market, directive, pred.horizon_jours);
+  const tr = horizonTarget(pred.horizon_jours);
+  const forecast = getForecast(pred, directive, pred.horizon_jours, tr);
+  const target = getTargetPrice(pred, market, directive, pred.horizon_jours, tr);
   const duel = getDuelVerdict(score, gemini);
   const drivers = buildScoreJustification(pred, market, season);
   const seasonMeta = getSeasonMeta(season);

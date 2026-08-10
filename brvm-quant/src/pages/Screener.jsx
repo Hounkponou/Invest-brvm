@@ -5,12 +5,6 @@ import { FilterSelect, FilterInput, FilterPanel } from '../components/filters';
 import EmptyState from '../components/EmptyState';
 
 // Options des filtres (déclarées hors composant = pas recréées à chaque rendu)
-const SORT_OPTIONS = [
-  { value: 'score', label: 'Score IA' },
-  { value: 'yield_desc', label: 'Rendement' },
-  { value: 'per_asc', label: 'PER le plus bas' },
-  { value: 'rsi_asc', label: 'RSI le plus bas' },
-];
 const VAL_OPTIONS = [
   { value: 'All', label: 'Tout' },
   { value: 'Sous-éval', label: 'Sous-évaluées' },
@@ -30,7 +24,6 @@ const LIQ_OPTIONS = [
 
 export default function Screener() {
   const {
-    screenerSort, setScreenerSort,
     filterVal, setFilterVal,
     filterRsi, setFilterRsi,
     filterLiquidity, setFilterLiquidity,
@@ -46,12 +39,7 @@ export default function Screener() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px', gap: '15px', flexWrap: 'wrap' }}>
         <h2 style={{ color: 'var(--text-main)', margin: 0 }}>Stock Screener</h2>
-        <FilterSelect
-          label="Trier par"
-          value={screenerSort}
-          onChange={setScreenerSort}
-          options={SORT_OPTIONS}
-        />
+        <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>cliquez un en-tête pour trier ↑↓</span>
       </div>
 
       {/* ZONE DES FILTRES AVANCÉS (composants réutilisables) */}
