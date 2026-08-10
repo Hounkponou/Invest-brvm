@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import StockCard from '../components/StockCard';
+import MarketTable from '../components/MarketTable';
+import { getSector } from '../utils/brvmConfig';
 
 export default function Dashboard() {
-  const { loadingMarket, globalSector, marketStats, setSelectedStock } = useOutletContext();
+  const { loadingMarket, globalSector, marketStats, setSelectedStock, marketData = [], riskBySymbol = {} } = useOutletContext();
+
+  // Marché filtré par secteur (le tri de la table rend Top/Flop natif).
+  const rows = useMemo(
+    () => (marketData || []).filter((i) => globalSector === 'All' || getSector(i.symbole) === globalSector),
+    [marketData, globalSector]
+  );
 
   if (loadingMarket) {
     return <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-muted)' }}>Synchronisation avec la BRVM en cours...</div>;
@@ -16,17 +23,14 @@ export default function Dashboard() {
           Résumé du Marché {globalSector !== 'All' ? `(${globalSector})` : 'Global'}
         </h2>
       </div>
-      
+
       {marketStats ? (
         <>
-          {/* RÉSUMÉ : barre synthétique sobre (3 indicateurs séparés) */}
+          {/* RÉSUMÉ : barre synthétique (3 indicateurs séparés) */}
           <div className="market-summary">
             <div className="ms-cell">
               <div className="ms-label">Sentiment</div>
-              <div
-                className="ms-value"
-                style={{ color: marketStats.sentiment === 'Haussier' ? 'var(--up-color)' : (marketStats.sentiment === 'Baissier' ? 'var(--down-color)' : 'var(--text-main)') }}
-              >
+              <div className="ms-value" style={{ color: marketStats.sentiment === 'Haussier' ? 'var(--up-color)' : (marketStats.sentiment === 'Baissier' ? 'var(--down-color)' : 'var(--text-main)') }}>
                 {marketStats.sentiment}
               </div>
               <div className="ms-sub">
@@ -34,13 +38,11 @@ export default function Dashboard() {
                 {'  '}<span style={{ color: 'var(--down-color)', fontWeight: 600 }}>{marketStats.declines} ▼</span>
               </div>
             </div>
-
             <div className="ms-cell">
               <div className="ms-label">Volume échangé</div>
-              <div className="ms-value">{marketStats.totalVol.toLocaleString()}</div>
+              <div className="ms-value">{marketStats.totalVol.toLocaleString('fr-FR')}</div>
               <div className="ms-sub">titres</div>
             </div>
-
             <div className="ms-cell">
               <div className="ms-label">Valeurs analysées</div>
               <div className="ms-value">{marketStats.count}</div>
@@ -48,21 +50,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* LISTE TOP ET FLOP */}
-          <div className="topflop-grid">
-            <div>
-              <h3 className="tf-title" style={{ color: 'var(--up-color)' }}>Top {marketStats.top3.length}</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {marketStats.top3.map(item => <StockCard key={item.symbole} item={item} onClick={setSelectedStock} />)}
-              </div>
-            </div>
-            <div>
-              <h3 className="tf-title" style={{ color: 'var(--down-color)' }}>Flop {marketStats.flop3.length}</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {marketStats.flop3.map(item => <StockCard key={item.symbole} item={item} onClick={setSelectedStock} />)}
-              </div>
-            </div>
+          {/* MARCHÉ COMPLET — table triable (clic sur un en-tête pour classer) */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '0 0 12px' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>Marché</h3>
+            <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>cliquez un en-tête pour trier ↑↓</span>
           </div>
+          <MarketTable items={rows} onSelect={setSelectedStock} riskBySymbol={riskBySymbol} initialSort={{ key: 'variation', dir: 'desc' }} />
         </>
       ) : (
         <div style={{ color: 'var(--text-muted)' }}>Aucune action trouvée.</div>

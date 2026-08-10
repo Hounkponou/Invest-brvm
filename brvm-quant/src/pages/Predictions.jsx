@@ -1,36 +1,25 @@
 /**
- * Predictions.jsx — LE MODULE PRÉDICTIF (page intégrée au Layout).
+ * Predictions.jsx — LE MODULE PRÉDICTIF (table de signaux triable).
  * ================================================================
- * Vue dédiée exclusivement à la partie prédictive du modèle XGBoost.
- * Elle assemble les composants modulaires et gère :
- *   - le chargement des données (hook usePredictions) ;
- *   - deux onglets : « Signaux du jour » et « Challenge » (backtest) ;
- *   - un filtre rapide sur la force du signal.
- *
- * COHÉRENCE : cette page n'est PLUS autonome. Elle est rendue à l'intérieur
- * du <Layout> commun (même Sidebar, même TopHeader, même thème Dark/Solar).
- *   - le thème est piloté globalement (bouton dans le TopHeader) → on retire
- *     le ThemeToggle local ;
- *   - la recherche et le filtre secteur viennent du TopHeader via
- *     useOutletContext() → les mêmes filtres que Dashboard / Screener.
- *
- * Design : mobile-first (empilement vertical par défaut, grille sur écrans
- * larges), espacements généreux, typographie lisible, couleurs via tokens.
+ * Signaux du jour en TABLE dense et triable (clic sur en-tête) — plus de grille
+ * de cartes/jauges/pastilles. Clic sur une ligne -> détail de l'action.
+ * Onglets : « Signaux du jour » et « Challenge » (backtest), sélecteur d'horizon
+ * commun, filtre par type de signal.
  */
 import React, { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import usePredictions from "../hooks/usePredictions";
 import useGeminiRecos from "../hooks/useGeminiRecos";
 import useSeasonality from "../hooks/useSeasonality";
-import PredictionCard from "../components/prediction/PredictionCard";
 import BacktestPanel from "../components/prediction/BacktestPanel";
-import StatCard from "../components/prediction/StatCard";
-import GeminiRecoPanel from "../components/prediction/GeminiRecoPanel";
+import DataTable, { ScoreBar } from "../components/DataTable";
 import { FilterChips } from "../components/filters";
 import { getSector } from "../utils/brvmConfig";
-import { computeBacktest, getSignal, getScore10, getGeminiScore10, HORIZONS } from "../utils/predictionHelpers";
+import {
+  computeBacktest, getSignal, getScore10, getGeminiScore10, getFinalDirective,
+  getTargetPrice, getSeasonMeta, formatFcfa, HORIZONS,
+} from "../utils/predictionHelpers";
 
-// Options de filtre sur le TYPE de signal (4 modalités).
 const FILTERS = [
   { key: "all", label: "Tous" },
   { key: "Achat Fort", label: "Achat Fort" },
@@ -39,84 +28,44 @@ const FILTERS = [
   { key: "Vente", label: "Vente" },
 ];
 
-// Sélecteur d'horizon (Court/Moyen/Long/Tous) — s'applique aux deux onglets.
-const HORIZON_OPTIONS = [
-  ...HORIZONS.map((h) => ({ key: h.days, label: h.short })),
-  { key: "all", label: "Tous" },
-];
+const HORIZON_OPTIONS = [...HORIZONS.map((h) => ({ key: h.days, label: h.short })), { key: "all", label: "Tous" }];
+const DIR_RANK = { ACHAT: 2, CONSERVER: 1, VENTE: 0 };
 
 export default function Predictions() {
-  // Filtres GLOBAUX partagés (recherche + secteur), fournis par le Layout.
-  // On sécurise avec des valeurs par défaut au cas où le contexte est absent.
-  const { searchQuery = "", globalSector = "All", marketData = [] } = useOutletContext() || {};
+  const { searchQuery = "", globalSector = "All", marketData = [], setSelectedStock } = useOutletContext() || {};
 
   const { live, closed, latestDate, loading, error, refetch } = usePredictions();
-  // Recommandations Gemini du jour, indexées par symbole (dégrade proprement si absent).
   const { bySymbol: geminiBySymbol } = useGeminiRecos();
-  // Saisonnalité du mois par titre (facteur quantitatif nouveau, sans Gemini).
   const { bySymbol: seasonBySymbol } = useSeasonality();
 
-  const [tab, setTab] = useState("signals"); // "signals" | "challenge"
-  const [filter, setFilter] = useState("all"); // type de signal (filtre local)
-  const [sortMode, setSortMode] = useState("modele"); // "modele" | "ia"
-  const [horizon, setHorizon] = useState(20); // 5 | 20 | 60 | "all" (défaut moyen)
+  const [tab, setTab] = useState("signals");
+  const [filter, setFilter] = useState("all");
+  const [horizon, setHorizon] = useState(20);
 
-  // Accès O(1) aux fondamentaux marché par symbole (justification du score).
   const marketBySymbol = useMemo(() => {
     const m = {};
     (marketData || []).forEach((d) => { if (d?.symbole) m[d.symbole] = d; });
     return m;
   }, [marketData]);
 
-  // Backtest dérivé des prédictions clôturées, FILTRÉ par l'horizon (harmonisé).
-  const backtest = useMemo(
-    () => computeBacktest(closed, horizon === "all" ? null : horizon),
-    [closed, horizon]
-  );
+  const backtest = useMemo(() => computeBacktest(closed, horizon === "all" ? null : horizon), [closed, horizon]);
 
-  // Signaux du jour filtrés : horizon + type de signal + recherche + secteur (globaux)
   const filteredLive = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return live.filter((p) => {
-      // 0. Horizon sélectionné (Court/Moyen/Long ; "all" = tous les horizons)
       if (horizon !== "all" && Number(p.horizon_jours) !== Number(horizon)) return false;
-      // 1. Type de signal (filtre local)
       if (filter !== "all" && getSignal(p) !== filter) return false;
-      // 2. Recherche texte (symbole ou nom) — filtre global du TopHeader
       if (q) {
         const hay = `${p.symbole ?? ""} ${p.nom ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      // 3. Secteur — filtre global du TopHeader
       if (globalSector !== "All" && getSector(p.symbole) !== globalSector) return false;
       return true;
     });
   }, [live, horizon, filter, searchQuery, globalSector]);
 
-  // Tri selon le FILTRE choisi : « Modèle » (score quantitatif) ou « IA » (avis
-  // Gemini). En mode IA, les titres sans avis passent en fin de liste.
-  const sortedLive = useMemo(() => {
-    const rows = [...filteredLive];
-    if (sortMode === "ia") {
-      rows.sort((a, b) => {
-        const sa = getGeminiScore10(geminiBySymbol[a.symbole]);
-        const sb = getGeminiScore10(geminiBySymbol[b.symbole]);
-        return (sb ?? -1) - (sa ?? -1);
-      });
-    } else {
-      rows.sort((a, b) => getScore10(b) - getScore10(a));
-    }
-    return rows;
-  }, [filteredLive, sortMode, geminiBySymbol]);
-
-  // Y a-t-il au moins un avis Gemini disponible ? (sinon, note en mode « Filtre IA »)
-  const hasGemini = useMemo(() => Object.keys(geminiBySymbol || {}).length > 0, [geminiBySymbol]);
-
-  // Compteurs KPI (4 modalités) pour l'HORIZON sélectionné, avant filtre local.
   const counts = useMemo(() => {
-    const rows = horizon === "all"
-      ? live
-      : live.filter((p) => Number(p.horizon_jours) === Number(horizon));
+    const rows = horizon === "all" ? live : live.filter((p) => Number(p.horizon_jours) === Number(horizon));
     let fort = 0, modere = 0, conserver = 0, vente = 0;
     rows.forEach((p) => {
       const s = getSignal(p);
@@ -128,173 +77,131 @@ export default function Predictions() {
     return { fort, modere, conserver, vente, total: rows.length };
   }, [live, horizon]);
 
-  return (
-    <div className="w-full">
-      {/* ================= EN-TÊTE (thème géré par le TopHeader) ============ */}
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-fg sm:text-3xl">
-            Module Prédictif <span className="text-accent">IA</span>
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Signaux XGBoost multi-horizons (5 / 20 / 60 j)
-            {latestDate ? ` • séance du ${latestDate}` : ""}
-          </p>
-        </div>
+  // Colonnes de la table de signaux (triables via DataTable).
+  const columns = useMemo(() => [
+    {
+      key: "symbole", label: "Titre", align: "left", type: "str",
+      render: (p) => (<><span className="mt-sym">{p.symbole}</span><span className="mt-nom">{getSector(p.symbole)}</span></>),
+    },
+    {
+      key: "directive", label: "Directive", align: "left", type: "num",
+      accessor: (p) => DIR_RANK[getFinalDirective(p, geminiBySymbol[p.symbole]).label] ?? 1,
+      render: (p) => {
+        const d = getFinalDirective(p, geminiBySymbol[p.symbole]);
+        return <span style={{ color: d.color, fontWeight: 800, letterSpacing: "0.02em" }}>{d.label}</span>;
+      },
+    },
+    { key: "score", label: "Score", align: "left", type: "num", accessor: (p) => getScore10(p), render: (p) => <ScoreBar score={getScore10(p)} /> },
+    { key: "proba", label: "Proba", align: "num", type: "num", accessor: (p) => Number(p.probabilite_modele || 0),
+      render: (p) => `${Math.round((p.probabilite_modele || 0) * 100)}%` },
+    {
+      key: "cible", label: "Cours cible", align: "num", type: "num", hideSm: true,
+      accessor: (p) => getTargetPrice(p, marketBySymbol[p.symbole], getFinalDirective(p, geminiBySymbol[p.symbole]), p.horizon_jours)?.central || 0,
+      render: (p) => {
+        const t = getTargetPrice(p, marketBySymbol[p.symbole], getFinalDirective(p, geminiBySymbol[p.symbole]), p.horizon_jours);
+        return t ? formatFcfa(t.central) : "—";
+      },
+    },
+    { key: "ia", label: "Score IA", align: "num", type: "num", hideSm: true,
+      accessor: (p) => getGeminiScore10(geminiBySymbol[p.symbole]) ?? -1,
+      render: (p) => { const s = getGeminiScore10(geminiBySymbol[p.symbole]); return s == null ? "—" : `${s}/10`; } },
+    {
+      key: "saison", label: "Saison", align: "left", type: "num", hideSm: true,
+      accessor: (p) => seasonBySymbol[p.symbole]?.season_score ?? 0,
+      render: (p) => {
+        const m = getSeasonMeta(seasonBySymbol[p.symbole]);
+        return <span style={{ color: m.color, fontWeight: 700 }} title={seasonBySymbol[p.symbole]?.season_label || ""}>{m.arrow}</span>;
+      },
+    },
+  ], [geminiBySymbol, seasonBySymbol, marketBySymbol]);
 
-        <button
-          type="button"
-          onClick={refetch}
-          className="self-start rounded-full border border-border bg-surface px-4 py-2 text-sm
-                     font-semibold text-fg transition hover:bg-surface2"
-        >
+  const openDetail = (p) => { const it = marketBySymbol[p.symbole]; if (it) setSelectedStock?.(it); };
+
+  const Stat = ({ label, value, color }) => (
+    <span style={{ whiteSpace: "nowrap" }}>
+      <span style={{ color: "var(--text-muted)" }}>{label} </span>
+      <strong style={{ color: color || "var(--text-main)", fontVariantNumeric: "tabular-nums" }}>{value}</strong>
+    </span>
+  );
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, borderBottom: "2px solid var(--border-color)", paddingBottom: 12, marginBottom: 16 }}>
+        <div>
+          <h2 style={{ margin: 0, color: "var(--text-main)" }}>Signaux prédictifs</h2>
+          <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: 2 }}>
+            XGBoost multi-horizons (5 / 20 / 60 j){latestDate ? ` · séance du ${latestDate}` : ""}
+          </div>
+        </div>
+        <button type="button" onClick={refetch}
+          style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid var(--border-color)", background: "var(--bg-panel)", color: "var(--text-main)", fontWeight: 600, cursor: "pointer" }}>
           Actualiser
         </button>
-      </header>
+      </div>
 
-      {/* ================= SÉLECTEUR D'HORIZON (commun aux 2 onglets) ======= */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted">Horizon</span>
-        <div className="inline-flex rounded-full border border-border bg-surface p-1">
+      {/* Horizon + résumé inline (plus de tuiles) */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginBottom: 16 }}>
+        <div style={{ display: "inline-flex", border: "1px solid var(--border-color)", borderRadius: 20, overflow: "hidden" }}>
           {HORIZON_OPTIONS.map((h) => (
-            <button
-              key={h.key}
-              type="button"
-              onClick={() => setHorizon(h.key)}
-              className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
-                horizon === h.key ? "text-fg" : "text-muted hover:text-fg"
-              }`}
-              style={horizon === h.key ? { backgroundColor: "var(--ipx-surface-2)" } : undefined}
-            >
+            <button key={h.key} type="button" onClick={() => setHorizon(h.key)}
+              style={{ border: "none", cursor: "pointer", padding: "6px 12px", fontSize: "0.85em", fontWeight: 700,
+                background: horizon === h.key ? "var(--accent-blue)" : "transparent", color: horizon === h.key ? "#fff" : "var(--text-muted)" }}>
               {h.label}
             </button>
           ))}
         </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, fontSize: "0.9em" }}>
+          <Stat label="Signaux" value={counts.total} color="var(--accent-blue)" />
+          <Stat label="Achat Fort" value={counts.fort} color="var(--up-color)" />
+          <Stat label="Modéré" value={counts.modere} color="var(--warn-color)" />
+          <Stat label="Conserver" value={counts.conserver} color="var(--text-muted)" />
+          <Stat label="Vente" value={counts.vente} color="var(--down-color)" />
+          <Stat label="Fiabilité" value={backtest.total ? `${backtest.hitRate}%` : "—"} />
+        </div>
       </div>
 
-      {/* ================= KPI SYNTHÈSE (4 modalités) ================= */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Signaux" value={counts.total} accent="var(--ipx-accent)" />
-        <StatCard label="Achat Fort" value={counts.fort} accent="var(--ipx-up)" />
-        <StatCard label="Achat Modéré" value={counts.modere} accent="var(--ipx-warn)" />
-        <StatCard label="Conserver" value={counts.conserver} accent="var(--ipx-muted)" />
-        <StatCard label="Vente" value={counts.vente} accent="var(--ipx-down)" />
-        <StatCard
-          label="Fiabilité"
-          value={backtest.total ? `${backtest.hitRate} %` : "—"}
-          accent="var(--ipx-fg)"
-        />
-      </div>
-
-      {/* ================= ONGLETS ================= */}
-      <div className="mb-6 inline-flex rounded-full border border-border bg-surface p-1">
-        {[
-          { key: "signals", label: "Signaux du jour" },
-          { key: "challenge", label: "Challenge" },
-        ].map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              tab === t.key ? "text-fg" : "text-muted hover:text-fg"
-            }`}
-            style={tab === t.key ? { backgroundColor: "var(--ipx-surface-2)" } : undefined}
-          >
+      {/* Onglets */}
+      <div style={{ display: "inline-flex", border: "1px solid var(--border-color)", borderRadius: 20, overflow: "hidden", marginBottom: 16 }}>
+        {[{ key: "signals", label: "Signaux du jour" }, { key: "challenge", label: "Challenge" }].map((t) => (
+          <button key={t.key} type="button" onClick={() => setTab(t.key)}
+            style={{ border: "none", cursor: "pointer", padding: "8px 16px", fontSize: "0.9em", fontWeight: 700,
+              background: tab === t.key ? "var(--accent-blue)" : "transparent", color: tab === t.key ? "#fff" : "var(--text-muted)" }}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* ================= ÉTATS GLOBAUX ================= */}
-      {loading && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="skeleton" style={{ height: 150, borderRadius: 16 }} />
-          ))}
-        </div>
-      )}
+      {loading && <div className="skeleton" style={{ height: 240, borderRadius: 8 }} />}
       {error && !loading && (
-        <div
-          className="rounded-2xl border p-6 text-center text-sm"
-          style={{ borderColor: "var(--ipx-down)", color: "var(--ipx-down)" }}
-        >
-          {error}
-        </div>
+        <div style={{ border: "1px solid var(--down-color)", color: "var(--down-color)", borderRadius: 8, padding: 20, textAlign: "center" }}>{error}</div>
       )}
 
-      {/* ================= CONTENU : SIGNAUX ================= */}
+      {/* SIGNAUX — table triable */}
       {!loading && !error && tab === "signals" && (
         <>
-          {/* Barre de contrôle : tri Modèle/IA + filtres de force du signal */}
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex rounded-full border border-border bg-surface p-1">
-              {[
-                { key: "modele", label: "Filtre Modèle" },
-                { key: "ia", label: "Filtre IA" },
-              ].map((m) => (
-                <button
-                  key={m.key}
-                  type="button"
-                  onClick={() => setSortMode(m.key)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-                    sortMode === m.key ? "text-fg" : "text-muted hover:text-fg"
-                  }`}
-                  style={sortMode === m.key ? { backgroundColor: "var(--ipx-surface-2)" } : undefined}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
             <FilterChips options={FILTERS} value={filter} onChange={setFilter} />
+            <span style={{ fontSize: "0.8em", color: "var(--text-muted)" }}>cliquez un en-tête pour trier ↑↓ · une ligne pour le détail</span>
           </div>
-
-          {sortMode === "ia" && !hasGemini && (
-            <div className="mb-4 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted">
-              Les avis de l'IA (Gemini) sont indisponibles pour l'instant — le tri « Filtre IA »
-              reprend l'ordre du modèle. Le classement redeviendra qualitatif dès que les
-              recommandations seront régénérées.
-            </div>
-          )}
-
-          {sortedLive.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-surface p-10 text-center text-muted">
+          {filteredLive.length === 0 ? (
+            <div style={{ border: "1px solid var(--border-color)", borderRadius: 8, padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
               Aucun signal ne correspond à ces filtres.
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {sortedLive.map((pred) => (
-                <div key={`${pred.date_prediction}-${pred.symbole}`} className="flex flex-col gap-2">
-                  <PredictionCard
-                    pred={pred}
-                    sector={getSector(pred.symbole)}
-                    market={marketBySymbol[pred.symbole]}
-                    gemini={geminiBySymbol[pred.symbole]}
-                    season={seasonBySymbol[pred.symbole]}
-                  />
-                  {/* Avis Gemini textuel + contrôle croisé (rendu seulement s'il existe) */}
-                  <GeminiRecoPanel gemini={geminiBySymbol[pred.symbole]} />
-                </div>
-              ))}
-            </div>
+            <DataTable columns={columns} rows={filteredLive} onRowClick={openDetail} initialSort={{ key: "score", dir: "desc" }} />
           )}
         </>
       )}
 
-      {/* ================= CONTENU : CHALLENGE ================= */}
+      {/* CHALLENGE */}
       {!loading && !error && tab === "challenge" && <BacktestPanel backtest={backtest} />}
 
-      {/* ================= NOTE PÉDAGOGIQUE ================= */}
-      <footer className="mt-10 rounded-2xl border border-border bg-surface p-4 text-xs text-muted">
-        <strong className="text-fg">Comment lire ces signaux ?</strong> Trois horizons — court
-        (5 j, cible +1 %), moyen (20 j, +2 %) et long (60 j, +4 %) —, chacun avec son propre
-        modèle. Le score sur 10 traduit la probabilité calibrée d'atteindre la cible de l'horizon.
-        Les signaux sont <strong className="text-fg">relatifs</strong> à la séance : « Achat Fort »
-        = meilleures opportunités (top ~10 %), « Achat Modéré » le top ~25 %, « Vente » les moins
-        bien classées (bas ~10 %), avec des planchers/plafonds de probabilité pour ne jamais
-        survendre ni suracheter à tort. Le Challenge juge chaque prédiction arrivée à terme en
-        <strong className="text-fg"> trois modalités</strong> : <em>réussi</em> (objectif atteint),
-        <em> partiel</em> (bon sens, mais objectif non atteint) et <em>manqué</em> (mauvais sens).
+      <footer style={{ marginTop: 32, border: "1px solid var(--border-color)", borderRadius: 8, padding: 16, fontSize: "0.8em", color: "var(--text-muted)", lineHeight: 1.6 }}>
+        <strong style={{ color: "var(--text-main)" }}>Comment lire ces signaux ?</strong> Trois horizons — court (5 j, +1 %),
+        moyen (20 j, +2 %), long (60 j, +4 %) —, chacun son modèle. Le score /10 traduit la probabilité calibrée d'atteindre
+        la cible. Signaux <strong style={{ color: "var(--text-main)" }}>relatifs</strong> à la séance : « Achat Fort » = top ~10 %,
+        « Achat Modéré » top ~25 %, « Vente » bas ~10 %, avec planchers/plafonds de probabilité. Le Challenge juge chaque
+        prédiction en <strong style={{ color: "var(--text-main)" }}>trois modalités</strong> (réussi / partiel / manqué).
         Ceci n'est pas un conseil en investissement.
       </footer>
     </div>
