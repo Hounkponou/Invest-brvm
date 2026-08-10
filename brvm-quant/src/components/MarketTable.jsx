@@ -9,8 +9,8 @@ import { getValColor } from "../utils/uiHelpers";
 const LIQ_COLOR = { Liquide: "var(--up-color)", "Peu liquide": "var(--warn-color)", Illiquide: "var(--down-color)" };
 const LIQ_RANK = { Liquide: 3, "Peu liquide": 2, Illiquide: 1 };
 
-export default function MarketTable({ items = [], onSelect, riskBySymbol = {}, initialSort = { key: "score_ia", dir: "desc" } }) {
-  const columns = useMemo(() => [
+export default function MarketTable({ items = [], onSelect, riskBySymbol = {}, initialSort = { key: "score_ia", dir: "desc" }, compact = false }) {
+  const columns = useMemo(() => ([
     {
       key: "symbole", label: "Titre", align: "left", type: "str",
       render: (r) => (<><span className="mt-sym">{r.symbole}</span><span className="mt-nom">{r.nom}</span></>),
@@ -43,7 +43,7 @@ export default function MarketTable({ items = [], onSelect, riskBySymbol = {}, i
         return <span style={{ color: LIQ_COLOR[lvl] || "var(--text-muted)", fontWeight: 600 }}>{lvl || "—"}</span>;
       },
     },
-  ], [riskBySymbol]);
+  ].filter((c) => !compact || ["symbole", "close", "variation", "score_ia"].includes(c.key))), [riskBySymbol, compact]);
 
   return <DataTable columns={columns} rows={items} onRowClick={onSelect} initialSort={initialSort} />;
 }

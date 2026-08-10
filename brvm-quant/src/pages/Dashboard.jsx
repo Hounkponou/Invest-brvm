@@ -50,9 +50,21 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* TOP 3 / FLOP 3 — en tables (plus haut de gain / de perte de la séance) */}
+          <div className="topflop-grid" style={{ marginBottom: 24 }}>
+            <div>
+              <h3 className="tf-title" style={{ color: 'var(--up-color)' }}>Top {marketStats.top3.length}</h3>
+              <MarketTable items={marketStats.top3} onSelect={setSelectedStock} riskBySymbol={riskBySymbol} initialSort={{ key: 'variation', dir: 'desc' }} compact />
+            </div>
+            <div>
+              <h3 className="tf-title" style={{ color: 'var(--down-color)' }}>Flop {marketStats.flop3.length}</h3>
+              <MarketTable items={marketStats.flop3} onSelect={setSelectedStock} riskBySymbol={riskBySymbol} initialSort={{ key: 'variation', dir: 'asc' }} compact />
+            </div>
+          </div>
+
           {/* MARCHÉ COMPLET — table triable (clic sur un en-tête pour classer) */}
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '0 0 12px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>Marché</h3>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>Marché complet</h3>
             <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>cliquez un en-tête pour trier ↑↓</span>
           </div>
           <MarketTable items={rows} onSelect={setSelectedStock} riskBySymbol={riskBySymbol} initialSort={{ key: 'variation', dir: 'desc' }} />

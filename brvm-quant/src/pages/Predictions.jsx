@@ -9,6 +9,7 @@
 import React, { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import BacktestPanel from "../components/prediction/BacktestPanel";
+import SignalDetail from "../components/prediction/SignalDetail";
 import DataTable, { ScoreBar } from "../components/DataTable";
 import { FilterChips } from "../components/filters";
 import { getSector } from "../utils/brvmConfig";
@@ -30,8 +31,8 @@ const DIR_RANK = { ACHAT: 2, CONSERVER: 1, VENTE: 0 };
 
 export default function Predictions() {
   const {
-    searchQuery = "", globalSector = "All", marketData = [], setSelectedStock,
-    predictions = {}, geminiBySymbol = {}, seasonBySymbol = {},
+    searchQuery = "", globalSector = "All", marketData = [],
+    predictions = {}, geminiBySymbol = {}, seasonBySymbol = {}, riskBySymbol = {},
   } = useOutletContext() || {};
 
   const { live = [], closed = [], latestDate = null, loading = false, error = null, refetch = () => {} } = predictions;
@@ -39,6 +40,7 @@ export default function Predictions() {
   const [tab, setTab] = useState("signals");
   const [filter, setFilter] = useState("all");
   const [horizon, setHorizon] = useState(20);
+  const [selectedSignal, setSelectedSignal] = useState(null); // vue projection + risque
 
   const marketBySymbol = useMemo(() => {
     const m = {};
@@ -113,7 +115,8 @@ export default function Predictions() {
     },
   ], [geminiBySymbol, seasonBySymbol, marketBySymbol]);
 
-  const openDetail = (p) => { const it = marketBySymbol[p.symbole]; if (it) setSelectedStock?.(it); };
+  // Clic sur un signal -> vue dédiée PROJECTION + RISQUE (pas la modale du Screener).
+  const openDetail = (p) => setSelectedSignal(p);
 
   const Stat = ({ label, value, color }) => (
     <span style={{ whiteSpace: "nowrap" }}>
@@ -202,6 +205,18 @@ export default function Predictions() {
         prédiction en <strong style={{ color: "var(--text-main)" }}>trois modalités</strong> (réussi / partiel / manqué).
         Ceci n'est pas un conseil en investissement.
       </footer>
+
+      {/* VUE DÉDIÉE d'un signal : projection + risque (à la place de la modale Screener) */}
+      {selectedSignal && (
+        <SignalDetail
+          signal={selectedSignal}
+          market={marketBySymbol[selectedSignal.symbole]}
+          risk={riskBySymbol[selectedSignal.symbole]}
+          gemini={geminiBySymbol[selectedSignal.symbole]}
+          season={seasonBySymbol[selectedSignal.symbole]}
+          onClose={() => setSelectedSignal(null)}
+        />
+      )}
     </div>
   );
 }

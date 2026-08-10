@@ -184,6 +184,34 @@ export function getTargetPrice(pred, market, directive, horizonDays = 15, target
 }
 
 /**
+ * Trajectoire de PROJECTION du cours : du prix actuel vers le cours cible sur
+ * l'horizon, avec bandes d'incertitude issues de la volatilité (modèle log-normal).
+ * Retour : [{ day, low, median, high }] prêt pour Recharts.
+ */
+export function projectSignalPath(start, target, horizonDays, annualVolPct) {
+  const s = Number(start) || 0;
+  const tgt = Number(target) || s;
+  const H = Math.max(1, Number(horizonDays) || 15);
+  const drift = Math.log((tgt > 0 ? tgt : s) / (s > 0 ? s : 1)) / H;
+  const sigDaily = Math.max(0, (Number(annualVolPct) || 0) / 100) / Math.sqrt(252);
+  const z = 1.0; // ~68 %
+  const steps = Math.min(H, 30);
+  const out = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * H;
+    const med = s * Math.exp(drift * t);
+    const spread = z * sigDaily * Math.sqrt(t);
+    out.push({
+      day: Math.round(t),
+      low: Math.round(s * Math.exp(drift * t - spread)),
+      median: Math.round(med),
+      high: Math.round(s * Math.exp(drift * t + spread)),
+    });
+  }
+  return out;
+}
+
+/**
  * Justification LISIBLE du score : liste de « moteurs » (+/−) construite à partir
  * des fondamentaux déjà disponibles (marché) et de la saisonnalité. Sans SHAP :
  * transparent et honnête sur ce qui pousse ou freine le score.
