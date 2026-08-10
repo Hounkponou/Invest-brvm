@@ -24,6 +24,10 @@ import useRisk from './hooks/useRisk';
 import RiskPanel from './components/RiskPanel';
 import useNews from './hooks/useNews';
 import NewsPanel from './components/NewsPanel';
+import usePredictions from './hooks/usePredictions';
+import useGeminiRecos from './hooks/useGeminiRecos';
+import useSeasonality from './hooks/useSeasonality';
+import PredictionAnalysisPanel from './components/PredictionAnalysisPanel';
 
 // ==========================================
 // MOYENNES MOBILES (MM20 / MM50 / MM100)
@@ -142,6 +146,11 @@ export default function App() {
   const [filterLiquidity, setFilterLiquidity] = useState('All');
   const { bySymbol: riskBySymbol } = useRisk();  // métriques de risque par titre (risk.json)
   const { bySymbol: newsBySymbol } = useNews();  // actualité par titre (news.json)
+  // Prédictions + Gemini + saisonnalité REMONTÉS ici : partagés entre la page
+  // Signaux (via contexte) et la modale de détail (analyse par titre).
+  const predictions = usePredictions();
+  const { bySymbol: geminiBySymbol } = useGeminiRecos();
+  const { bySymbol: seasonBySymbol } = useSeasonality();
   const [screenerSort, setScreenerSort] = useState('score');
   
   const [selectedStock, setSelectedStock] = useState(null);
@@ -836,6 +845,15 @@ export default function App() {
             )}
           </div>
 
+          {/* SIGNAUX PRÉDICTIFS détaillés (par horizon : directive, duel, justification…) */}
+          <PredictionAnalysisPanel
+            symbol={selectedStock.symbole}
+            predictions={predictions.live}
+            market={selectedStock}
+            gemini={geminiBySymbol[selectedStock.symbole]}
+            season={seasonBySymbol[selectedStock.symbole]}
+          />
+
           {/* ACTUALITÉS de la société (Google News + résumé IA) */}
           <NewsPanel news={newsBySymbol[selectedStock.symbole]} />
 
@@ -866,6 +884,7 @@ export default function App() {
             filterRsi={filterRsi} setFilterRsi={setFilterRsi}
             filterLiquidity={filterLiquidity} setFilterLiquidity={setFilterLiquidity}
             riskBySymbol={riskBySymbol}
+            predictions={predictions} geminiBySymbol={geminiBySymbol} seasonBySymbol={seasonBySymbol}
             screenerData={screenerData}
             sectorPerStats={sectorPerStats}
             

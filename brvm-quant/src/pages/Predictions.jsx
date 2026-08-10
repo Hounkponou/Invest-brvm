@@ -8,9 +8,6 @@
  */
 import React, { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import usePredictions from "../hooks/usePredictions";
-import useGeminiRecos from "../hooks/useGeminiRecos";
-import useSeasonality from "../hooks/useSeasonality";
 import BacktestPanel from "../components/prediction/BacktestPanel";
 import DataTable, { ScoreBar } from "../components/DataTable";
 import { FilterChips } from "../components/filters";
@@ -32,11 +29,12 @@ const HORIZON_OPTIONS = [...HORIZONS.map((h) => ({ key: h.days, label: h.short }
 const DIR_RANK = { ACHAT: 2, CONSERVER: 1, VENTE: 0 };
 
 export default function Predictions() {
-  const { searchQuery = "", globalSector = "All", marketData = [], setSelectedStock } = useOutletContext() || {};
+  const {
+    searchQuery = "", globalSector = "All", marketData = [], setSelectedStock,
+    predictions = {}, geminiBySymbol = {}, seasonBySymbol = {},
+  } = useOutletContext() || {};
 
-  const { live, closed, latestDate, loading, error, refetch } = usePredictions();
-  const { bySymbol: geminiBySymbol } = useGeminiRecos();
-  const { bySymbol: seasonBySymbol } = useSeasonality();
+  const { live = [], closed = [], latestDate = null, loading = false, error = null, refetch = () => {} } = predictions;
 
   const [tab, setTab] = useState("signals");
   const [filter, setFilter] = useState("all");
