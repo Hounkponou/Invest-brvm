@@ -23,20 +23,32 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-# Mapping sectoriel (aligné sur brvm-quant/src/utils/brvmConfig.js).
+# Mapping sectoriel MODERNE (aligné sur brvm-quant/src/utils/brvmConfig.js) : 47 titres, 7 secteurs.
 BRVM_SECTORS = {
-    "BICC": "Finances", "BOAC": "Finances", "BOAN": "Finances", "BOABF": "Finances",
-    "BOAM": "Finances", "BICB": "Finances", "BOAB": "Finances", "BOAS": "Finances",
-    "ETIT": "Finances", "SGBC": "Finances", "SIBC": "Finances", "NSBC": "Finances",
-    "CORI": "Finances", "SAFC": "Finances", "ORGT": "Finances",
-    "BNBC": "Distribution", "ABJC": "Distribution", "CFAC": "Distribution",
-    "PRSC": "Distribution", "SHEC": "Distribution", "TTLC": "Distribution", "TTRC": "Distribution",
-    "CABC": "Industrie", "NTLC": "Industrie", "STBC": "Industrie", "SMBC": "Industrie",
-    "SLBC": "Industrie", "UNXC": "Industrie", "CILC": "Industrie",
-    "SOGC": "Agriculture", "SPHC": "Agriculture", "PALC": "Agriculture", "SICC": "Agriculture",
-    "CIEC": "Services Publics", "ONEC": "Services Publics", "SDCC": "Services Publics",
-    "SDSC": "Transport",
-    "ORAC": "Telecommunications", "ONTBF": "Telecommunications", "SNTS": "Telecommunications",
+    # Services Financiers (16)
+    "BICC": "Services Financiers", "BOAC": "Services Financiers", "BOAN": "Services Financiers",
+    "BOABF": "Services Financiers", "BOAM": "Services Financiers", "BOAB": "Services Financiers",
+    "BOAS": "Services Financiers", "ETIT": "Services Financiers", "ECOC": "Services Financiers",
+    "SGBC": "Services Financiers", "SIBC": "Services Financiers", "NSBC": "Services Financiers",
+    "CBIBF": "Services Financiers", "SAFC": "Services Financiers", "ORGT": "Services Financiers",
+    "BICB": "Services Financiers",
+    # Télécommunications (3)
+    "SNTS": "Telecommunications", "ONTBF": "Telecommunications", "ORAC": "Telecommunications",
+    # Services Publics (2)
+    "CIEC": "Services Publics", "SDCC": "Services Publics",
+    # Énergie (4)
+    "SHEC": "Energie", "TTLC": "Energie", "TTLS": "Energie", "SMBC": "Energie",
+    # Consommation de Base (9)
+    "SOGC": "Consommation de Base", "SPHC": "Consommation de Base", "PALC": "Consommation de Base",
+    "SICC": "Consommation de Base", "SIVC": "Consommation de Base", "SCRC": "Consommation de Base",
+    "SLBC": "Consommation de Base", "NTLC": "Consommation de Base", "UNLC": "Consommation de Base",
+    # Consommation Discrétionnaire (6)
+    "CFAC": "Consommation Discretionnaire", "PRSC": "Consommation Discretionnaire",
+    "ABJC": "Consommation Discretionnaire", "BNBC": "Consommation Discretionnaire",
+    "LNBB": "Consommation Discretionnaire", "UNXC": "Consommation Discretionnaire",
+    # Industriels (7)
+    "CABC": "Industriels", "FTSC": "Industriels", "NEIC": "Industriels",
+    "STBC": "Industriels", "SEMC": "Industriels", "SDSC": "Industriels", "STAC": "Industriels",
 }
 
 TRADING_DAYS = 252

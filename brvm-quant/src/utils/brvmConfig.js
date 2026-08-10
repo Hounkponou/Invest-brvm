@@ -1,22 +1,35 @@
+// Sectorisation MODERNE (GICS-like), exhaustive : les 47 titres cotés, 7 secteurs.
 export const BRVM_SECTORS = {
-  'BICC': 'Finances', 'BOAC': 'Finances', 'BOAN': 'Finances', 'BOABF': 'Finances',
-  'BOAM': 'Finances', 'BICB': 'Finances', 'BOAB': 'Finances', 'BOAS': 'Finances',
-  'ETIT': 'Finances', 'SGBC': 'Finances', 'SIBC': 'Finances', 'NSBC': 'Finances',
-  'CORI': 'Finances', 'SAFC': 'Finances', 'ORGT': 'Finances',
+  // --- Services Financiers (16) ---
+  'BICC': 'Services Financiers', 'BOAC': 'Services Financiers', 'BOAN': 'Services Financiers',
+  'BOABF': 'Services Financiers', 'BOAM': 'Services Financiers', 'BOAB': 'Services Financiers',
+  'BOAS': 'Services Financiers', 'ETIT': 'Services Financiers', 'ECOC': 'Services Financiers',
+  'SGBC': 'Services Financiers', 'SIBC': 'Services Financiers', 'NSBC': 'Services Financiers',
+  'CBIBF': 'Services Financiers', 'SAFC': 'Services Financiers', 'ORGT': 'Services Financiers',
+  'BICB': 'Services Financiers',
 
-  'BNBC': 'Distribution', 'ABJC': 'Distribution', 'CFAC': 'Distribution',
-  'PRSC': 'Distribution', 'SHEC': 'Distribution', 'TTLC': 'Distribution', 'TTRC': 'Distribution',
+  // --- Télécommunications (3) ---
+  'SNTS': 'Telecommunications', 'ONTBF': 'Telecommunications', 'ORAC': 'Telecommunications',
 
-  'CABC': 'Industrie', 'NTLC': 'Industrie', 'STBC': 'Industrie', 'SMBC': 'Industrie',
-  'SLBC': 'Industrie', 'UNXC': 'Industrie', 'CILC': 'Industrie',
+  // --- Services Publics (2) ---
+  'CIEC': 'Services Publics', 'SDCC': 'Services Publics',
 
-  'SOGC': 'Agriculture', 'SPHC': 'Agriculture', 'PALC': 'Agriculture', 'SICC': 'Agriculture',
+  // --- Énergie (4) ---
+  'SHEC': 'Energie', 'TTLC': 'Energie', 'TTLS': 'Energie', 'SMBC': 'Energie',
 
-  'CIEC': 'Services Publics', 'ONEC': 'Services Publics', 'SDCC': 'Services Publics',
+  // --- Consommation de Base (9) : agriculture, alimentaire, boissons ---
+  'SOGC': 'Consommation de Base', 'SPHC': 'Consommation de Base', 'PALC': 'Consommation de Base',
+  'SICC': 'Consommation de Base', 'SIVC': 'Consommation de Base', 'SCRC': 'Consommation de Base',
+  'SLBC': 'Consommation de Base', 'NTLC': 'Consommation de Base', 'UNLC': 'Consommation de Base',
 
-  'SDSC':'Transport',
-  
-  'ORAC':'Telecommunications','ONTBF':'Telecommunications','SNTS': 'Telecommunications',
+  // --- Consommation Discrétionnaire (6) : auto, équipement, loisirs, textile ---
+  'CFAC': 'Consommation Discretionnaire', 'PRSC': 'Consommation Discretionnaire',
+  'ABJC': 'Consommation Discretionnaire', 'BNBC': 'Consommation Discretionnaire',
+  'LNBB': 'Consommation Discretionnaire', 'UNXC': 'Consommation Discretionnaire',
+
+  // --- Industriels (7) : industrie, BTP, logistique ---
+  'CABC': 'Industriels', 'FTSC': 'Industriels', 'NEIC': 'Industriels',
+  'STBC': 'Industriels', 'SEMC': 'Industriels', 'SDSC': 'Industriels', 'STAC': 'Industriels',
 };
 
 export const getSector = (symbole) => BRVM_SECTORS[symbole] || 'Autres';
