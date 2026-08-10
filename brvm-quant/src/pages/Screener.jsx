@@ -1,8 +1,7 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
-import StockCard from '../components/StockCard';
+import MarketTable from '../components/MarketTable';
 import { FilterSelect, FilterInput, FilterPanel } from '../components/filters';
-import { getSector } from '../utils/brvmConfig';
 import EmptyState from '../components/EmptyState';
 
 // Options des filtres (déclarées hors composant = pas recréées à chaque rendu)
@@ -71,27 +70,21 @@ export default function Screener() {
         </div>
       </FilterPanel>
 
-      {/* RÉSULTATS DU SCREENER */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-        {screenerData.map(item => (
-          <StockCard
-            key={item.symbole}
-            item={item}
-            onClick={setSelectedStock}
-            sectorAvgPer={sectorPerStats?.[getSector(item.symbole)]?.avg}
-            liquidity={riskBySymbol[item.symbole]?.liquidity?.level}
-          />
-        ))}
-        {screenerData.length === 0 && (
-          <div style={{ gridColumn: '1 / -1' }}>
-            <EmptyState
-              icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>}
-              title="Aucune valeur ne correspond"
-              message="Élargissez vos critères (valorisation, momentum ou fourchette de prix) pour afficher des résultats."
-            />
-          </div>
-        )}
-      </div>
+      {/* RÉSULTATS DU SCREENER — table dense (plus de grille de cartes) */}
+      {screenerData.length === 0 ? (
+        <EmptyState
+          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>}
+          title="Aucune valeur ne correspond"
+          message="Élargissez vos critères (valorisation, momentum ou fourchette de prix) pour afficher des résultats."
+        />
+      ) : (
+        <MarketTable
+          items={screenerData}
+          onSelect={setSelectedStock}
+          riskBySymbol={riskBySymbol}
+          sectorPerStats={sectorPerStats}
+        />
+      )}
     </div>
   );
 }
