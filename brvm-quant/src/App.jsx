@@ -22,6 +22,8 @@ import Predictions from './pages/Predictions'; // Nouveau Module Prédictif (aut
 import { expectedReturnsAndRisk, optimizeWeights, projectScenarios } from './utils/portfolioOptim';
 import useRisk from './hooks/useRisk';
 import RiskPanel from './components/RiskPanel';
+import useNews from './hooks/useNews';
+import NewsPanel from './components/NewsPanel';
 
 // ==========================================
 // MOYENNES MOBILES (MM20 / MM50 / MM100)
@@ -139,6 +141,7 @@ export default function App() {
   const [filterRsi, setFilterRsi] = useState('All');
   const [filterLiquidity, setFilterLiquidity] = useState('All');
   const { bySymbol: riskBySymbol } = useRisk();  // métriques de risque par titre (risk.json)
+  const { bySymbol: newsBySymbol } = useNews();  // actualité par titre (news.json)
   const [screenerSort, setScreenerSort] = useState('score');
   
   const [selectedStock, setSelectedStock] = useState(null);
@@ -832,6 +835,9 @@ export default function App() {
              </div>
             )}
           </div>
+
+          {/* ACTUALITÉS de la société (Google News + résumé IA) */}
+          <NewsPanel news={newsBySymbol[selectedStock.symbole]} />
 
           {/* ANALYSE DU RISQUE (liquidité, volatilité ajustée, VaR, distribution, bêta) */}
           <RiskPanel risk={riskBySymbol[selectedStock.symbole]} sector={getSector(selectedStock.symbole)} />

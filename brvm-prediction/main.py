@@ -39,7 +39,7 @@ def main():
     parser = argparse.ArgumentParser(description="Application BRVM-Quant MLOps")
     parser.add_argument(
         "--task", type=str, required=True,
-        choices=["train", "predict", "evaluate", "gemini", "export", "snapshot", "dividends"],
+        choices=["train", "predict", "evaluate", "gemini", "export", "snapshot", "dividends", "news"],
         help="La tâche à exécuter",
     )
     parser.add_argument(
@@ -61,6 +61,18 @@ def main():
             record_run("snapshot", "failed", {"error": str(exc)[:300]}, time.time() - start)
             raise
         record_run("snapshot", "success", {"result": n}, time.time() - start)
+        return
+
+    # Tâche LÉGÈRE 'news' : actualité par société (Google News RSS + résumé Gemini).
+    if args.task == "news":
+        from core.news import run_news
+        start = time.time()
+        try:
+            n = run_news()
+        except Exception as exc:  # noqa: BLE001
+            record_run("news", "failed", {"error": str(exc)[:300]}, time.time() - start)
+            raise
+        record_run("news", "success", {"result": n}, time.time() - start)
         return
 
     # Tâche LÉGÈRE 'dividends' : scraping web des dividendes -> Supabase (sans extraction).

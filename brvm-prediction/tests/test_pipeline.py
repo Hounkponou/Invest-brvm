@@ -303,6 +303,32 @@ def test_compute_risk_vol_ajustee_exclut_dividende():
     assert risk["SGBC"]["var"]["horizons"]["10"]["p95"] <= risk["SGBC"]["var"]["horizons"]["1"]["p95"]
 
 
+# --------------------------------------------------------------------------- actualités
+def test_news_short_name_et_norm():
+    from core.news import short_name, _norm
+    assert short_name("SONATEL SENEGAL") == "SONATEL"
+    assert short_name("SOGB COTE D'IVOIRE") == "SOGB"
+    assert _norm("Société Générale") == "societe generale"
+
+
+def test_news_parse_rss_filtre_bruit():
+    from core.news import _parse_rss_items, _norm
+    from email.utils import format_datetime
+    from datetime import datetime, timezone
+    now = format_datetime(datetime.now(timezone.utc))
+    rss = f"""<?xml version="1.0"?><rss><channel>
+      <item><title>BRVM : Sonatel franchit un record - Sika Finance</title>
+        <link>https://x/1</link><pubDate>{now}</pubDate><source url="s">Sika Finance</source></item>
+      <item><title>BRVM : revue de marché générique - Leral</title>
+        <link>https://x/2</link><pubDate>{now}</pubDate><source url="s">Leral</source></item>
+    </channel></rss>""".encode("utf-8")
+    items = _parse_rss_items(rss, must_match=[_norm("SONATEL"), _norm("SNTS")], limit=5)
+    # Seul le titre mentionnant Sonatel est retenu (le générique est filtré).
+    assert len(items) == 1
+    assert items[0]["source"] == "Sika Finance"
+    assert "Sonatel" in items[0]["title"] and " - " not in items[0]["title"]
+
+
 def test_relative_signal_vente():
     from scripts.upsert_predictions import relative_signal, _quantile
     # Distribution avec des titres franchement faibles -> bas décile passe en Vente,
