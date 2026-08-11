@@ -28,7 +28,7 @@ const FILTERS = [
 const HORIZON_OPTIONS = [...HORIZONS.map((h) => ({ key: h.days, label: h.short })), { key: "all", label: "Tous" }];
 const DIR_RANK = { ACHAT: 2, CONSERVER: 1, VENTE: 0 };
 
-export default function Predictions() {
+export default function Predictions({ embedded = false }) {
   const {
     searchQuery = "", globalSector = "All", marketData = [], setSelectedStock,
     predictions = {}, geminiBySymbol = {}, seasonBySymbol = {},
@@ -125,18 +125,20 @@ export default function Predictions() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, borderBottom: "2px solid var(--border-color)", paddingBottom: 12, marginBottom: 16 }}>
-        <div>
-          <h2 style={{ margin: 0, color: "var(--text-main)" }}>Signaux prédictifs</h2>
-          <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: 2 }}>
-            XGBoost multi-horizons (5 / 20 / 60 j){latestDate ? ` · séance du ${latestDate}` : ""}
+      {!embedded && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, borderBottom: "2px solid var(--border-color)", paddingBottom: 12, marginBottom: 16 }}>
+          <div>
+            <h2 style={{ margin: 0, color: "var(--text-main)" }}>Signaux prédictifs</h2>
+            <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: 2 }}>
+              XGBoost multi-horizons (5 / 20 / 60 j){latestDate ? ` · séance du ${latestDate}` : ""}
+            </div>
           </div>
+          <button type="button" onClick={refetch}
+            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid var(--border-color)", background: "var(--bg-panel)", color: "var(--text-main)", fontWeight: 600, cursor: "pointer" }}>
+            Actualiser
+          </button>
         </div>
-        <button type="button" onClick={refetch}
-          style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid var(--border-color)", background: "var(--bg-panel)", color: "var(--text-main)", fontWeight: 600, cursor: "pointer" }}>
-          Actualiser
-        </button>
-      </div>
+      )}
 
       {/* Horizon + résumé inline (plus de tuiles) */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginBottom: 16 }}>

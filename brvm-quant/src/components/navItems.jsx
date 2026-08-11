@@ -18,8 +18,7 @@ export const NavIcons = {
 // to = route ; label = libellé sidebar ; short = libellé onglet mobile (court)
 export const NAV_ITEMS = [
   { to: '/dashboard', label: 'Tableau de bord', short: 'Marché', icon: NavIcons.dashboard },
-  { to: '/screener', label: 'Screener', short: 'Screener', icon: NavIcons.screener },
-  { to: '/predictions', label: 'Signaux IA', short: 'Signaux', icon: NavIcons.signals },
+  { to: '/analyse', label: 'Analyse', short: 'Analyse', icon: NavIcons.screener },
   { to: '/simulator', label: 'Backtest Lab', short: 'Backtest', icon: NavIcons.backtest },
   { to: '/portfolio', label: 'Portefeuille', short: 'Portef.', icon: NavIcons.portfolio },
 ];

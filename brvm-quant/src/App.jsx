@@ -19,6 +19,7 @@ import Screener from './pages/Screener';
 import Simulator from './pages/Simulator';
 import Portfolio from './pages/Portfolio';
 import Predictions from './pages/Predictions'; // Nouveau Module Prédictif (autonome, thème Dark/Solar)
+import Market from './pages/Market'; // Page ANALYSE unifiée (Fondamentaux + Signaux IA)
 import { expectedReturnsAndRisk, optimizeWeights, projectScenarios } from './utils/portfolioOptim';
 import useRisk from './hooks/useRisk';
 import RiskPanel from './components/RiskPanel';
@@ -916,9 +917,11 @@ export default function App() {
           />
         }>
           <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
-          <Route path="/screener" element={user ? <Screener /> : <Navigate to="/" />} />
-          {/* Module Prédictif : désormais dans le Layout → même sidebar, même header, même thème */}
-          <Route path="/predictions" element={user ? <Predictions /> : <Navigate to="/" />} />
+          {/* Page ANALYSE unifiée : Fondamentaux (Screener) + Signaux IA sous une bascule */}
+          <Route path="/analyse" element={user ? <Market /> : <Navigate to="/" />} />
+          {/* Redirections des anciennes routes -> page unifiée */}
+          <Route path="/screener" element={<Navigate to="/analyse" replace />} />
+          <Route path="/predictions" element={<Navigate to="/analyse" replace />} />
           <Route path="/simulator" element={user ? <Simulator /> : <Navigate to="/" />} />
           <Route path="/portfolio" element={user ? <Portfolio /> : <Navigate to="/" />} />
         </Route>

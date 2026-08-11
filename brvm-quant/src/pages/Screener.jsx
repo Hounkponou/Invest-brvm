@@ -22,7 +22,7 @@ const LIQ_OPTIONS = [
   { value: 'Illiquide', label: 'Illiquides' },
 ];
 
-export default function Screener() {
+export default function Screener({ embedded = false }) {
   const {
     filterVal, setFilterVal,
     filterRsi, setFilterRsi,
@@ -37,10 +37,12 @@ export default function Screener() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px', gap: '15px', flexWrap: 'wrap' }}>
-        <h2 style={{ color: 'var(--text-main)', margin: 0 }}>Stock Screener</h2>
-        <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>cliquez un en-tête pour trier ↑↓</span>
-      </div>
+      {!embedded && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px', gap: '15px', flexWrap: 'wrap' }}>
+          <h2 style={{ color: 'var(--text-main)', margin: 0 }}>Stock Screener</h2>
+          <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>cliquez un en-tête pour trier ↑↓</span>
+        </div>
+      )}
 
       {/* ZONE DES FILTRES AVANCÉS (composants réutilisables) */}
       <FilterPanel>
