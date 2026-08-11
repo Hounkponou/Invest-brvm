@@ -72,12 +72,6 @@ function HorizonBlock({ pred, market, gemini, season }) {
       {season?.season_label && (
         <div style={{ marginTop: 4, fontSize: "0.8em", color: "var(--text-muted)" }}>{season.season_label}</div>
       )}
-      {gemini?.justification && (
-        <div style={{ marginTop: 8, fontSize: "0.85em", color: "var(--text-main)", background: "var(--bg-base)", border: "1px solid var(--border-color)", borderRadius: 8, padding: "10px 12px" }}>
-          <span style={{ fontSize: "0.72em", fontWeight: 700, textTransform: "uppercase", color: "var(--accent-blue)", marginRight: 8 }}>Avis IA</span>
-          {gemini.justification}
-        </div>
-      )}
     </div>
   );
 }

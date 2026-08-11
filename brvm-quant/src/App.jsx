@@ -30,6 +30,7 @@ import useGeminiRecos from './hooks/useGeminiRecos';
 import useSeasonality from './hooks/useSeasonality';
 import PredictionAnalysisPanel from './components/PredictionAnalysisPanel';
 import ProjectionChart from './components/prediction/ProjectionChart';
+import GeminiRecoPanel from './components/prediction/GeminiRecoPanel';
 
 // ==========================================
 // MOYENNES MOBILES (MM20 / MM50 / MM100)
@@ -864,6 +865,9 @@ export default function App() {
             gemini={geminiBySymbol[selectedStock.symbole]}
             season={seasonBySymbol[selectedStock.symbole]}
           />
+
+          {/* RECOMMANDATION TEXTE de Gemini (une seule fois par titre) */}
+          <GeminiRecoPanel gemini={geminiBySymbol[selectedStock.symbole]} />
 
           {/* ACTUALITÉS de la société (Google News + résumé IA) */}
           <NewsPanel news={newsBySymbol[selectedStock.symbole]} />
