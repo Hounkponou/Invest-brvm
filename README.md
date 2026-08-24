@@ -1,6 +1,6 @@
 # 🚀 Invest Pro & BRVM-Quant
 
-**Invest Pro** est une plateforme intégrée d'analyse financière et de gestion de portefeuille dédiée à la **Bourse Régionale des Valeurs Mobilières (BRVM)**. Elle couple un tableau de bord d'investissement moderne (mobile-first, thème Dark & Solar) avec un pipeline **MLOps** automatisé qui produit des signaux de probabilité de hausse à **15 jours** via un modèle **XGBoost** calibré.
+**Invest Pro** est une plateforme intégrée d'analyse financière et de gestion de portefeuille dédiée à la **Bourse Régionale des Valeurs Mobilières (BRVM)**. Elle couple un tableau de bord d'investissement moderne (mobile-first, thème Dark & Solar) avec un pipeline **MLOps** automatisé qui produit des signaux de probabilité de hausse à **3 horizons (5 / 20 / 60 jours)** via des modèles **XGBoost** calibrés.
 
 ---
 
