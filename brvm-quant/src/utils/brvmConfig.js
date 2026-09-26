@@ -1,12 +1,12 @@
-// Sectorisation MODERNE (GICS-like), exhaustive : les 47 titres cotés, 7 secteurs.
+// Sectorisation MODERNE (GICS-like), exhaustive : les 48 titres cotés, 7 secteurs.
 export const BRVM_SECTORS = {
-  // --- Services Financiers (16) ---
+  // --- Services Financiers (17) ---
   'BICC': 'Services Financiers', 'BOAC': 'Services Financiers', 'BOAN': 'Services Financiers',
   'BOABF': 'Services Financiers', 'BOAM': 'Services Financiers', 'BOAB': 'Services Financiers',
   'BOAS': 'Services Financiers', 'ETIT': 'Services Financiers', 'ECOC': 'Services Financiers',
   'SGBC': 'Services Financiers', 'SIBC': 'Services Financiers', 'NSBC': 'Services Financiers',
   'CBIBF': 'Services Financiers', 'SAFC': 'Services Financiers', 'ORGT': 'Services Financiers',
-  'BICB': 'Services Financiers',
+  'BICB': 'Services Financiers', 'BBGC': 'Services Financiers',
 
   // --- Télécommunications (3) ---
   'SNTS': 'Telecommunications', 'ONTBF': 'Telecommunications', 'ORAC': 'Telecommunications',

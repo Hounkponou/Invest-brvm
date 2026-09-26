@@ -23,15 +23,15 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-# Mapping sectoriel MODERNE (aligné sur brvm-quant/src/utils/brvmConfig.js) : 47 titres, 7 secteurs.
+# Mapping sectoriel MODERNE (aligné sur brvm-quant/src/utils/brvmConfig.js) : 48 titres, 7 secteurs.
 BRVM_SECTORS = {
-    # Services Financiers (16)
+    # Services Financiers (17)
     "BICC": "Services Financiers", "BOAC": "Services Financiers", "BOAN": "Services Financiers",
     "BOABF": "Services Financiers", "BOAM": "Services Financiers", "BOAB": "Services Financiers",
     "BOAS": "Services Financiers", "ETIT": "Services Financiers", "ECOC": "Services Financiers",
     "SGBC": "Services Financiers", "SIBC": "Services Financiers", "NSBC": "Services Financiers",
     "CBIBF": "Services Financiers", "SAFC": "Services Financiers", "ORGT": "Services Financiers",
-    "BICB": "Services Financiers",
+    "BICB": "Services Financiers", "BBGC": "Services Financiers",
     # Télécommunications (3)
     "SNTS": "Telecommunications", "ONTBF": "Telecommunications", "ORAC": "Telecommunications",
     # Services Publics (2)
