@@ -27,6 +27,7 @@ import useNews from './hooks/useNews';
 import NewsPanel from './components/NewsPanel';
 import usePredictions from './hooks/usePredictions';
 import useMarketData from './hooks/useMarketData';
+import useStockHistory from './hooks/useStockHistory';
 import useGeminiRecos from './hooks/useGeminiRecos';
 import useSeasonality from './hooks/useSeasonality';
 import PredictionAnalysisPanel from './components/PredictionAnalysisPanel';
@@ -118,9 +119,11 @@ export default function App() {
   const [screenerSort, setScreenerSort] = useState('score');
   
   const [selectedStock, setSelectedStock] = useState(null);
-  const [stockHistory, setStockHistory] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
   const [chartHorizon, setChartHorizon] = useState('ALL');
+  // Historique du titre sélectionné — chargement/repli encapsulés dans le hook.
+  const { stockHistory, loadingHistory } = useStockHistory(selectedStock);
+  // Réinitialise l'horizon du graphe à chaque changement de titre.
+  useEffect(() => { setChartHorizon('ALL'); }, [selectedStock]);
   // Visibilité des moyennes mobiles (l'utilisateur affiche celles qu'il veut).
   const [visibleMA, setVisibleMA] = useState({ 20: true, 50: true, 100: false });
   // Détection mobile : le graphique de cours devient défilable horizontalement.
@@ -178,37 +181,6 @@ export default function App() {
 
     fetchCloudPortfolio();
   }, [user]);
-
-  useEffect(() => {
-    async function fetchStockHistory() {
-      if (!selectedStock) return;
-      setLoadingHistory(true);
-      setChartHorizon('ALL'); 
-      try {
-        // 1) CHEMIN RAPIDE : historique pré-généré dans Supabase Storage (CDN, 1 requête).
-        //    Sort la lecture d'historique de Postgres (auparavant paginée en 1000 lignes).
-        try {
-          const { data: pub } = supabase.storage.from('market-history').getPublicUrl(`${selectedStock.symbole}.json`);
-          if (pub?.publicUrl) {
-            const res = await fetch(pub.publicUrl, { cache: 'no-cache' });
-            if (res.ok) {
-              const rows = await res.json();
-              if (Array.isArray(rows) && rows.length) { setStockHistory(rows); return; }
-            }
-          }
-        } catch (_) { /* fichier absent -> repli Supabase */ }
-
-        // 2) REPLI : lecture paginée directe (si l'export n'a pas encore tourné pour ce titre).
-        let allStockData = [], startRow = 0, keepFetching = true;
-        while (keepFetching) {
-          const { data } = await supabase.from('full_stock_pro').select('date, close, sma_20, volume').eq('symbole', selectedStock.symbole).order('date', { ascending: true }).range(startRow, startRow + 999);
-          if (data && data.length > 0) { allStockData = [...allStockData, ...data]; startRow += 1000; if (data.length < 1000) keepFetching = false; } else keepFetching = false;
-        }
-        setStockHistory(allStockData);
-      } catch (err) { console.error(err); } finally { setLoadingHistory(false); }
-    }
-    fetchStockHistory();
-  }, [selectedStock]);
 
   // ==========================================
   // 3. FONCTIONS UTILITAIRES & ACTIONS
@@ -637,7 +609,7 @@ export default function App() {
                 <option value="1825">Zoom 5 Ans</option>
                 <option value="ALL">Historique Complet</option>
               </select>
-              <button style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-panel)', color: 'var(--text-main)', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { setSelectedStock(null); setStockHistory([]); }}>Fermer ✕</button>
+              <button style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-panel)', color: 'var(--text-main)', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setSelectedStock(null)}>Fermer ✕</button>
             </div>
           </div>
 
