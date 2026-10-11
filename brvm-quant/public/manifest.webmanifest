@@ -1,0 +1,17 @@
+{
+  "name": "InvestPro — Analyse BRVM",
+  "short_name": "InvestPro",
+  "description": "Analyse quantitative de la BRVM : scores, signaux IA, backtest et suivi de portefeuille.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0D1020",
+  "theme_color": "#5B7CFA",
+  "icons": [
+    { "src": "/icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}
