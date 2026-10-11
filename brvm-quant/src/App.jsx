@@ -26,6 +26,7 @@ import RiskPanel from './components/RiskPanel';
 import useNews from './hooks/useNews';
 import NewsPanel from './components/NewsPanel';
 import usePredictions from './hooks/usePredictions';
+import useMarketData from './hooks/useMarketData';
 import useGeminiRecos from './hooks/useGeminiRecos';
 import useSeasonality from './hooks/useSeasonality';
 import PredictionAnalysisPanel from './components/PredictionAnalysisPanel';
@@ -71,44 +72,6 @@ function movingAverageAnalysis(rows) {
   return { price, above20: above('sma_20'), above50: above('sma_50'), above100: above('sma_100'), cross };
 }
 
-// ==========================================
-// ALGORITHME QUANT PRO : ATR & VOLATILITÉ
-// ==========================================
-const calculateTradingPoints = (stock) => {
-  const currentPrice = stock.close || 0;
-  const sma = stock.sma_20 || currentPrice;
-  const rsi = stock.rsi_14 || 50;
-
-  // Estimation de la volatilité journalière (Proxy ATR)
-  const rawVolatility = Math.abs(stock.variation) > 0 ? (Math.abs(stock.variation) / 100) : 0.025;
-  const atr = stock.atr_14 || (currentPrice * rawVolatility);
-
-  // 1. Point d'entrée dynamique
-  let entry = currentPrice;
-  if (rsi > 65) {
-    entry = currentPrice - atr; // Suracheté : attente d'un repli de 1x l'ATR
-  } else if (currentPrice > sma && currentPrice < sma + (atr * 2)) {
-    entry = sma; // Tendance haussière saine : achat sur support SMA 20
-  } else {
-    entry = currentPrice - (atr * 0.5); // Contexte neutre : léger discount
-  }
-
-  // 2. Stop-Loss basé sur la volatilité (1.5x ATR sous l'entrée)
-  let stopLoss = entry - (1.5 * atr);
-
-  // 3. Objectif de sortie (Take Profit basé sur un ratio Risk/Reward > 2)
-  let exit = entry + (3.0 * atr); 
-  if (rsi < 35) {
-    exit = entry + (4.0 * atr); // Suracheté : potentiel de rebond technique accru
-  }
-
-  return {
-    entry: Math.round(Math.max(entry, 1)),
-    exit: Math.round(exit),
-    stopLoss: Math.round(Math.max(stopLoss, 1)),
-    volatility: Math.round(atr)
-  };
-};
 
 export default function App() {
   // ==========================================
@@ -137,10 +100,8 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
-  const [marketData, setMarketData] = useState([]);
-  const [loadingMarket, setLoadingMarket] = useState(false);
-  // Métadonnées de fraîcheur : { date (séance), generatedAt (ISO) } -> indicateur d'en-tête
-  const [marketMeta, setMarketMeta] = useState(null);
+  // Snapshot marché (+ fraîcheur) — chargement/polling encapsulés dans le hook.
+  const { marketData, loadingMarket, marketMeta } = useMarketData(user);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [globalSector, setGlobalSector] = useState('All');
@@ -208,57 +169,6 @@ export default function App() {
   useEffect(() => {
     if (!user) return; 
     
-    // Enrichit chaque action avec les points de trading calculés (ATR).
-    const enrich = (rows) => (rows || []).map((s) => ({ ...s, ...calculateTradingPoints(s) }));
-
-    async function fetchLatestMarket(silent = false) {
-      if (!silent) setLoadingMarket(true);
-      try {
-        // 1) SNAPSHOT LIVE : Supabase Storage, rafraîchi toutes les 15 min en séance
-        //    (near-real-time). Servi par CDN -> aucune requête DB par utilisateur.
-        try {
-          const { data: pub } = supabase.storage.from('market-history').getPublicUrl('market_latest.json');
-          if (pub?.publicUrl) {
-            const res = await fetch(pub.publicUrl, { cache: 'no-cache' });
-            if (res.ok) {
-              const json = await res.json();
-              if (Array.isArray(json?.stocks) && json.stocks.length) {
-                setMarketData(enrich(json.stocks));
-                setMarketMeta({ date: json.date, generatedAt: json.generated_at || null });
-                return;
-              }
-            }
-          }
-        } catch (_) { /* -> snapshot quotidien */ }
-
-        // 2) LIVE : lecture directe de la vue (toujours à jour). Préférée à
-        //    l'artefact statique, qui peut être périmé si le Storage tombe.
-        try {
-          const { data: dateData } = await supabase.from('full_stock_pro').select('date').order('date', { ascending: false }).limit(1);
-          if (dateData?.[0]?.date) {
-            const { data } = await supabase.from('full_stock_pro').select('*').eq('date', dateData[0].date);
-            if (Array.isArray(data) && data.length) {
-              setMarketData(enrich(data));
-              setMarketMeta({ date: dateData[0].date, generatedAt: null });
-              return;
-            }
-          }
-        } catch (_) { /* -> dernier recours : artefact statique */ }
-
-        // 3) DERNIER RECOURS : artefact statique CDN (git/Vercel), si la base
-        //    est injoignable. Peut être moins récent — n'arrive qu'en mode dégradé.
-        const res = await fetch(`${import.meta.env.BASE_URL || '/'}data/market_latest.json`, { cache: 'no-cache' });
-        if (res.ok) {
-          const json = await res.json();
-          if (Array.isArray(json?.stocks) && json.stocks.length) {
-            setMarketData(enrich(json.stocks));
-            setMarketMeta({ date: json.date, generatedAt: json.generated_at || null });
-          }
-        }
-      } catch (err) { console.error(err); }
-      finally { if (!silent) setLoadingMarket(false); }
-    }
-    
     async function fetchCloudPortfolio() {
       const { data } = await supabase.from('user_portfolios').select('*').eq('user_id', user.id);
       if (data) {
@@ -266,19 +176,7 @@ export default function App() {
       }
     }
 
-    fetchLatestMarket();
     fetchCloudPortfolio();
-
-    // Near-real-time : rafraîchissement SILENCIEUX du marché toutes les 60 s, mais
-    // UNIQUEMENT pendant les heures de bourse BRVM (lun-ven, 8h-20h UTC). Lit le
-    // snapshot Storage (CDN) -> aucun coût côté base, quel que soit le nb d'utilisateurs.
-    const inMarketHours = () => {
-      const d = new Date();
-      const day = d.getUTCDay(), h = d.getUTCHours();
-      return day >= 1 && day <= 5 && h >= 8 && h < 20;
-    };
-    const poll = setInterval(() => { if (inMarketHours()) fetchLatestMarket(true); }, 60000);
-    return () => clearInterval(poll);
   }, [user]);
 
   useEffect(() => {
