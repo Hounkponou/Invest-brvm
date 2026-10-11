@@ -12,3 +12,5 @@ data/
 __pycache__/
 *.pyc
 .DS_Store
+# Dataset public dormant (51 Mo) — gardé en local, hors repo
+brvm-data-public-main/
