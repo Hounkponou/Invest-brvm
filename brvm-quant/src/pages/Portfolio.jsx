@@ -1,55 +1,80 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { getSector, PIE_COLORS } from '../utils/brvmConfig';
 import EmptyState from '../components/EmptyState';
 
+const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('fr-FR');
+const signed = (n) => `${n >= 0 ? '+' : ''}${fmt(n)}`;
+const plColor = (n) => (n >= 0 ? 'var(--up-color)' : 'var(--down-color)');
+
+// Barre d'allocation empilée (remplace les camemberts) + légende.
+function Allocation({ title, data, offset = 0 }) {
+  const total = data.reduce((a, d) => a + (d.value || 0), 0) || 1;
+  const slices = data
+    .map((d, i) => ({ ...d, pct: (d.value / total) * 100, color: PIE_COLORS[(i + offset) % PIE_COLORS.length] }))
+    .sort((a, b) => b.pct - a.pct);
+  return (
+    <div className="pf-alloc">
+      <div className="dash-block-head"><span>{title}</span></div>
+      <div className="pf-alloc-bar">
+        {slices.map((s) => <i key={s.name} style={{ width: `${s.pct}%`, background: s.color }} title={`${s.name} ${s.pct.toFixed(1)}%`} />)}
+      </div>
+      <ul className="pf-alloc-legend">
+        {slices.map((s) => (
+          <li key={s.name}>
+            <span className="pf-swatch" style={{ background: s.color }} />
+            <span className="pf-leg-name">{s.name}</span>
+            <span className="dash-num pf-leg-pct">{s.pct.toFixed(1)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function Portfolio() {
-  const { 
-    handleManualAdd, manualSymbol, setManualSymbol, marketData, 
-    manualShares, setManualShares, manualPrice, setManualPrice, 
-    groupedPortfolio, portfolioAnalytics, openSellModal 
+  const {
+    handleManualAdd, manualSymbol, setManualSymbol, marketData,
+    manualShares, setManualShares, manualPrice, setManualPrice,
+    groupedPortfolio, portfolioAnalytics, openSellModal,
   } = useOutletContext();
 
+  const hasPositions = groupedPortfolio.length > 0 && portfolioAnalytics;
+  const pl = hasPositions ? portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested : 0;
+  const plPct = hasPositions && portfolioAnalytics.totalInvested ? (pl / portfolioAnalytics.totalInvested) * 100 : 0;
+
   return (
-    <div>
-      <div style={{ borderBottom: '2px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px' }}>
-        <h2 style={{ color: 'var(--text-main)', margin: 0 }}>Portefeuille & Risque</h2>
-      </div>
+    <div className="pf">
+      <header className="dash-masthead">
+        <div>
+          <div className="dash-kicker">Portefeuille · Suivi</div>
+          <h2 className="dash-title">Mes positions</h2>
+        </div>
+      </header>
 
-      {/* FORMULAIRE D'AJOUT MANUEL */}
-      <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', marginBottom: '30px', border: '1px solid var(--border-color)' }}>
-        <h3 style={{ margin: '0 0 15px 0', color: 'var(--text-main)' }}>Ajouter une position</h3>
-        <form onSubmit={handleManualAdd} style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 250px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <label style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>Rechercher l'action</label>
-            <input 
-              list="stock-options" 
-              value={manualSymbol} 
-              onChange={(e) => setManualSymbol(e.target.value)} 
-              placeholder="Ex: SGBC ou Société..." 
-              required
-              style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)' }} 
-            />
-            <datalist id="stock-options">
-              {[...marketData].sort((a,b) => a.symbole.localeCompare(b.symbole)).map(i => (
-                <option key={i.symbole} value={i.symbole}>{i.nom}</option>
-              ))}
-            </datalist>
-          </div>
-          <div style={{ flex: '1 1 100px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <label style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>Quantité</label>
-            <input style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)' }} type="number" min="1" value={manualShares} onChange={(e) => setManualShares(e.target.value)} required placeholder="Qté" />
-          </div>
-          <div style={{ flex: '1 1 150px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <label style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>PRU Unitaire</label>
-            <input style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)' }} type="number" min="1" step="any" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} required placeholder="Ex: 2500" />
-          </div>
-          <button type="submit" style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--up-color)', color: 'white', fontWeight: 'bold', cursor: 'pointer', height: '42px' }}>Ajouter</button>
-        </form>
-      </div>
+      {/* Ajout de position — barre d'outils sobre */}
+      <form onSubmit={handleManualAdd} className="pf-form">
+        <div className="pf-field pf-field-grow">
+          <label className="pf-label">Action</label>
+          <input list="stock-options" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value)} placeholder="Ex : SGBC ou société…" required className="pf-input" />
+          <datalist id="stock-options">
+            {[...marketData].sort((a, b) => a.symbole.localeCompare(b.symbole)).map((i) => (
+              <option key={i.symbole} value={i.symbole}>{i.nom}</option>
+            ))}
+          </datalist>
+        </div>
+        <div className="pf-field">
+          <label className="pf-label">Quantité</label>
+          <input type="number" min="1" value={manualShares} onChange={(e) => setManualShares(e.target.value)} required placeholder="Qté" className="pf-input dash-num" />
+        </div>
+        <div className="pf-field">
+          <label className="pf-label">PRU unitaire</label>
+          <input type="number" min="1" step="any" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} required placeholder="Ex : 2 500" className="pf-input dash-num" />
+        </div>
+        <button type="submit" className="pf-add">Ajouter</button>
+      </form>
 
-      {groupedPortfolio.length === 0 || !portfolioAnalytics ? (
+      {!hasPositions ? (
         <EmptyState
           icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2" /><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3" /><path d="M16 12h5v3h-5a1.5 1.5 0 0 1 0-3z" /></svg>}
           title="Votre portefeuille est vide"
@@ -57,113 +82,77 @@ export default function Portfolio() {
         />
       ) : (
         <>
-          {/* ANALYTIQUES ET GRAPHIQUES */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                <div style={{ color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.85em', fontWeight: 'bold' }}>Valeur Globale</div>
-                <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: 'var(--text-main)', marginTop: '5px' }}>
-                  {portfolioAnalytics.totalValue.toLocaleString()} F
-                </div>
-                <div style={{ fontSize: '0.9em', color: (portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested) >= 0 ? 'var(--up-color)' : 'var(--down-color)', marginTop: '5px' }}>
-                                  P/L : {(portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested) >= 0 ? '+' : ''}{(portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested).toLocaleString()} F 
-                                  {' '}
-                  <span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>
-                    ({((portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested) / portfolioAnalytics.totalInvested >= 0 ? '+' : '')}
-                    {(((portfolioAnalytics.totalValue - portfolioAnalytics.totalInvested) / portfolioAnalytics.totalInvested) * 100).toFixed(2)}%)
-                  </span>
-                </div>
-              </div>
-              <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', borderLeft: `4px solid ${portfolioAnalytics.riskStatus.color}` }}>
-                <div style={{ color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.85em', fontWeight: 'bold' }}>Profil de Risque</div>
-                <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: portfolioAnalytics.riskStatus.color, marginTop: '5px' }}>
-                  {portfolioAnalytics.riskStatus.label}
-                </div>
+          {/* KPI à plat (pas de tuiles) */}
+          <section className="pf-kpis">
+            <div className="pf-kpi">
+              <div className="pf-kpi-label">Valeur globale</div>
+              <div className="pf-kpi-val dash-num">{fmt(portfolioAnalytics.totalValue)} F</div>
+            </div>
+            <div className="pf-kpi">
+              <div className="pf-kpi-label">P/L latent</div>
+              <div className="pf-kpi-val dash-num" style={{ color: plColor(pl) }}>
+                {signed(pl)} F <span className="pf-kpi-sub">({plPct >= 0 ? '+' : ''}{plPct.toFixed(2)}%)</span>
               </div>
             </div>
-
-            
-            <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'row', gap: '10px' }}>
-              <div style={{ flex: 1, height: '220px', minWidth: '150px' }}>
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9em', fontWeight: 'bold' }}>Actifs</div>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={portfolioAnalytics.assetsChart} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value">
-                      {portfolioAnalytics.assetsChart.map((e, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ flex: 1, height: '220px', minWidth: '150px', borderLeft: '1px solid var(--border-color)' }}>
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9em', fontWeight: 'bold' }}>Secteurs</div>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={portfolioAnalytics.sectorsChart} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value">
-                      {portfolioAnalytics.sectorsChart.map((e, i) => <Cell key={i} fill={PIE_COLORS[(i + 3) % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
+            <div className="pf-kpi">
+              <div className="pf-kpi-label">Capital investi</div>
+              <div className="pf-kpi-val dash-num">{fmt(portfolioAnalytics.totalInvested)} F</div>
             </div>
+            <div className="pf-kpi">
+              <div className="pf-kpi-label">Profil de risque</div>
+              <div className="pf-kpi-val" style={{ color: portfolioAnalytics.riskStatus.color, fontSize: '1.3rem' }}>
+                {portfolioAnalytics.riskStatus.label}
+              </div>
+              {portfolioAnalytics.riskStatus.desc && <div className="pf-kpi-desc">{portfolioAnalytics.riskStatus.desc}</div>}
+            </div>
+          </section>
+
+          {/* Allocation en barres empilées (remplace les camemberts) */}
+          <div className="pf-grid2">
+            <Allocation title="Répartition par actif" data={portfolioAnalytics.assetsChart} offset={0} />
+            <Allocation title="Répartition par secteur" data={portfolioAnalytics.sectorsChart} offset={3} />
           </div>
-          
-          {/* TABLEAU DES POSITIONS */}
-          <div style={{ overflowX: 'auto', background: 'var(--bg-panel)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', backgroundColor: 'var(--bg-base)' }}>
-                  <th style={{ padding: '15px' }}>Actif</th>
-                  <th style={{ padding: '15px' }}>Qté</th>
-                  <th style={{ padding: '15px' }}>CMP (Investi)</th>
-                  <th style={{ padding: '15px' }}>Cours (Valeur)</th>
-                  <th style={{ padding: '15px' }}>P/L Latent</th>
-                  <th style={{ padding: '15px' }}>Conseil IA</th>
-                  <th style={{ padding: '15px' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groupedPortfolio.map((pos) => (
-                  <tr key={pos.sigle} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '15px' }}>
-                      <strong style={{ color: 'var(--text-main)', fontSize: '1.1em' }}>{pos.sigle}</strong><br/>
-                      <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>{getSector(pos.sigle)}</span>
-                    </td>
-                    <td style={{ padding: '15px', fontWeight: 'bold' }}>{pos.totalShares}</td>
-                    <td style={{ padding: '15px' }}>
-                      {Math.round(pos.cmp).toLocaleString()} F<br/>
-                      <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>Tot: {pos.totalInvested.toLocaleString()}</span>
-                    </td>
-                    <td style={{ padding: '15px' }}>
-                      {pos.currentPrice.toLocaleString()} F<br/>
-                      <span style={{ fontSize: '0.8em', color: 'var(--accent-blue)' }}>Val: {pos.currentValue.toLocaleString()}</span>
-                    </td>
-                    <td style={{ padding: '15px', color: pos.profit >= 0 ? 'var(--up-color)' : 'var(--down-color)', fontWeight: 'bold' }}>
-                      {pos.profit >= 0 ? '+' : ''}{Math.round(pos.profit).toLocaleString()} F <br/>
-                      <span style={{ fontSize: '0.8em' }}>({pos.profit >= 0 ? '+' : ''}{pos.profitPct.toFixed(2)}%)</span>
-                    </td>
-                    <td style={{ padding: '15px' }}>
-                      <span style={{ color: pos.conseil.color, fontWeight: 'bold', border: `1px solid ${pos.conseil.color}`, padding: '6px 10px', borderRadius: '20px', fontSize: '0.85em', display: 'inline-block' }}>
-                        {pos.conseil.texte}
-                      </span>
-                    </td>
-                    <td style={{ padding: '15px' }}>
-                      <button 
-                        onClick={() => openSellModal(pos.sigle, pos.totalShares)} 
-                        style={{ background: 'transparent', border: '1px solid var(--down-color)', color: 'var(--down-color)', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                      >
-                        Vendre
-                      </button>
-                    </td>
+
+          {/* Positions */}
+          <section className="pf-block">
+            <div className="dash-block-head"><span>Positions ({groupedPortfolio.length})</span><span className="dash-muted" style={{ fontWeight: 600 }}>P/L latent</span></div>
+            <div className="pf-table-wrap">
+              <table className="pf-table">
+                <thead>
+                  <tr>
+                    <th>Actif</th><th className="r">Qté</th><th className="r">CMP</th><th className="r">Cours</th>
+                    <th className="r">Valeur</th><th className="r">P/L latent</th><th>Signal</th><th aria-label="action" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {groupedPortfolio.map((pos) => (
+                    <tr key={pos.sigle}>
+                      <td>
+                        <span className="pf-sym">{pos.sigle}</span>
+                        <span className="pf-sec">{getSector(pos.sigle)}</span>
+                      </td>
+                      <td className="r dash-num">{pos.totalShares}</td>
+                      <td className="r dash-num">{fmt(pos.cmp)}</td>
+                      <td className="r dash-num">{fmt(pos.currentPrice)}</td>
+                      <td className="r dash-num">{fmt(pos.currentValue)}</td>
+                      <td className="r dash-num" style={{ color: plColor(pos.profit), fontWeight: 700 }}>
+                        {signed(pos.profit)}
+                        <span className="pf-pl-pct"> ({pos.profit >= 0 ? '+' : ''}{pos.profitPct.toFixed(2)}%)</span>
+                      </td>
+                      <td>
+                        <span className="pf-advice" style={{ color: pos.conseil.color }}>
+                          <i style={{ background: pos.conseil.color }} />{pos.conseil.texte}
+                        </span>
+                      </td>
+                      <td className="r">
+                        <button onClick={() => openSellModal(pos.sigle, pos.totalShares)} className="pf-sell">Vendre</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </>
       )}
     </div>

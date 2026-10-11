@@ -140,6 +140,56 @@ h4 { font-size: 1rem; font-weight: 700; }
   .dash-sector-name { font-size: 0.82rem; }
 }
 
+/* =======================================================================
+   PORTEFEUILLE — même langage (KPI à plat, allocation en barres, table)
+   ======================================================================= */
+.pf-form { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; padding: 16px; margin: 0 0 26px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-panel); }
+.pf-field { display: flex; flex-direction: column; gap: 6px; flex: 0 1 150px; }
+.pf-field-grow { flex: 1 1 260px; }
+.pf-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.pf-input { padding: 9px 11px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-base); color: var(--text-main); font-size: 0.9rem; }
+.pf-input:focus { outline: none; border-color: var(--accent-blue); }
+.pf-add { padding: 0 20px; height: 38px; border: none; border-radius: 6px; background: var(--accent-blue); color: #fff; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; }
+.pf-add:hover { filter: brightness(1.08); }
+
+.pf-kpis { display: flex; flex-wrap: wrap; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); margin-bottom: 28px; }
+.pf-kpi { flex: 1 1 160px; padding: 16px 18px; }
+.pf-kpi + .pf-kpi { border-left: 1px solid var(--border-color); }
+.pf-kpi-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.pf-kpi-val { font-size: 1.55rem; font-weight: 800; color: var(--text-main); margin-top: 6px; line-height: 1.1; }
+.pf-kpi-sub { font-size: 0.85rem; font-weight: 700; }
+.pf-kpi-desc { font-size: 0.74rem; color: var(--text-muted); margin-top: 4px; line-height: 1.35; }
+
+.pf-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 28px; }
+.pf-alloc-bar { display: flex; height: 12px; border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
+.pf-alloc-bar i { display: block; }
+.pf-alloc-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.pf-alloc-legend li { display: flex; align-items: center; gap: 9px; font-size: 0.86rem; }
+.pf-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.pf-leg-name { color: var(--text-main); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-leg-pct { color: var(--text-muted); font-weight: 700; }
+
+.pf-block { margin-bottom: 20px; }
+.pf-table-wrap { overflow-x: auto; }
+.pf-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.pf-table thead th { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+.pf-table th.r, .pf-table td.r { text-align: right; }
+.pf-table tbody td { padding: 12px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; color: var(--text-main); }
+.pf-table tbody tr:hover { background: var(--bg-hover); }
+.pf-sym { font-weight: 700; color: var(--text-main); }
+.pf-sec { display: block; font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; }
+.pf-pl-pct { font-size: 0.8em; font-weight: 600; opacity: 0.85; }
+.pf-advice { display: inline-flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; }
+.pf-advice i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.pf-sell { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.82rem; }
+.pf-sell:hover { border-color: var(--down-color); color: var(--down-color); }
+
+@media (max-width: 760px) {
+  .pf-grid2 { grid-template-columns: 1fr; gap: 20px; }
+  .pf-kpi { flex-basis: 50%; }
+  .pf-kpi:nth-child(odd) { border-left: none; }
+}
+
 /* MARKET TABLE — paradigme « terminal de données » (remplace la grille de cartes) */
 .market-table-wrap { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 6px; }
 .market-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
