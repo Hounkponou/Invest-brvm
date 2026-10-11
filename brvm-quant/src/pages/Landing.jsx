@@ -1,5 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BRVM_SECTORS } from '../utils/brvmConfig';
+
+// Nombre de valeurs suivies — dérivé de la sectorisation (ne se périme jamais).
+const LISTED = Object.keys(BRVM_SECTORS).length;
 
 /* --------------------------------------------------------------------------
    Icônes ligne (SVG) — remplacent les emoji "app IA" par une iconographie
@@ -122,15 +126,15 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
               Investir sur la BRVM sur des <span style={{ color: 'var(--accent-blue)' }}>données</span>, pas au feeling.
             </h1>
             <p style={{ fontSize: '1.08rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: '0 0 30px', maxWidth: '52ch' }}>
-              Analyse quantitative des 47 valeurs de la cote : score sur 10, signaux de probabilité à 15 jours, backtest de stratégies et suivi de portefeuille — en un seul endroit.
+              Analyse quantitative des {LISTED} valeurs de la cote : score sur 10, signaux de probabilité à 3 horizons (5/20/60 j), backtest de stratégies et suivi de portefeuille — en un seul endroit.
             </p>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
               <button onClick={primary} style={btnSolid}>{user ? 'Ouvrir le tableau de bord' : 'Commencer'}<Ico.arrow width={17} height={17} /></button>
               <button onClick={() => goFeature('/screener')} style={btnGhost}>Voir le screener</button>
             </div>
             <div style={{ marginTop: 26, display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              <span><strong style={{ color: 'var(--text-main)' }}>47</strong> valeurs suivies</span>
-              <span><strong style={{ color: 'var(--text-main)' }}>15 j</strong> horizon de signal</span>
+              <span><strong style={{ color: 'var(--text-main)' }}>{LISTED}</strong> valeurs suivies</span>
+              <span><strong style={{ color: 'var(--text-main)' }}>5/20/60 j</strong> horizons de signal</span>
               <span><strong style={{ color: 'var(--text-main)' }}>10 ans</strong> d'historique</span>
             </div>
           </div>

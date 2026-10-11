@@ -231,25 +231,29 @@ export default function App() {
           }
         } catch (_) { /* -> snapshot quotidien */ }
 
-        // 2) SNAPSHOT QUOTIDIEN : artefact statique CDN (git/Vercel).
+        // 2) LIVE : lecture directe de la vue (toujours à jour). Préférée à
+        //    l'artefact statique, qui peut être périmé si le Storage tombe.
         try {
-          const res = await fetch(`${import.meta.env.BASE_URL || '/'}data/market_latest.json`, { cache: 'no-cache' });
-          if (res.ok) {
-            const json = await res.json();
-            if (Array.isArray(json?.stocks) && json.stocks.length) {
-              setMarketData(enrich(json.stocks));
-              setMarketMeta({ date: json.date, generatedAt: json.generated_at || null });
+          const { data: dateData } = await supabase.from('full_stock_pro').select('date').order('date', { ascending: false }).limit(1);
+          if (dateData?.[0]?.date) {
+            const { data } = await supabase.from('full_stock_pro').select('*').eq('date', dateData[0].date);
+            if (Array.isArray(data) && data.length) {
+              setMarketData(enrich(data));
+              setMarketMeta({ date: dateData[0].date, generatedAt: null });
               return;
             }
           }
-        } catch (_) { /* -> Supabase */ }
+        } catch (_) { /* -> dernier recours : artefact statique */ }
 
-        // 3) REPLI : lecture directe Supabase (si aucun artefact disponible).
-        const { data: dateData } = await supabase.from('full_stock_pro').select('date').order('date', { ascending: false }).limit(1);
-        if (dateData?.[0]?.date) {
-          const { data } = await supabase.from('full_stock_pro').select('*').eq('date', dateData[0].date);
-          setMarketData(enrich(data));
-          setMarketMeta({ date: dateData[0].date, generatedAt: null });
+        // 3) DERNIER RECOURS : artefact statique CDN (git/Vercel), si la base
+        //    est injoignable. Peut être moins récent — n'arrive qu'en mode dégradé.
+        const res = await fetch(`${import.meta.env.BASE_URL || '/'}data/market_latest.json`, { cache: 'no-cache' });
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json?.stocks) && json.stocks.length) {
+            setMarketData(enrich(json.stocks));
+            setMarketMeta({ date: json.date, generatedAt: json.generated_at || null });
+          }
         }
       } catch (err) { console.error(err); }
       finally { if (!silent) setLoadingMarket(false); }
