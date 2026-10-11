@@ -75,7 +75,7 @@ h4 { font-size: 1rem; font-weight: 700; }
 .dash-masthead {
   display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
   padding-bottom: 12px; margin-bottom: 18px;
-  border-bottom: 2px solid var(--text-main);
+  border-bottom: 1px solid var(--text-muted);
 }
 .dash-kicker {
   display: inline-flex; align-items: center; gap: 8px;
