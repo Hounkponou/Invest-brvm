@@ -19,22 +19,28 @@ export default function Market() {
 
   return (
     <div>
-      {/* En-tête + bascule de lentille */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, borderBottom: "2px solid var(--border-color)", paddingBottom: 12, marginBottom: 20 }}>
+      {/* Bandeau éditorial + onglets de lentille */}
+      <header className="dash-masthead">
         <div>
-          <h2 style={{ margin: 0, color: "var(--text-main)" }}>Analyse du marché</h2>
-          <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: 2 }}>{active.hint}</div>
+          <div className="dash-kicker">Analyse · {active.label}</div>
+          <h2 className="dash-title">Analyse du marché</h2>
+          <div className="dash-subhint">{active.hint}</div>
         </div>
-        <div style={{ display: "inline-flex", border: "1px solid var(--border-color)", borderRadius: 20, overflow: "hidden" }}>
+        <div className="lens-tabs" role="tablist">
           {LENSES.map((l) => (
-            <button key={l.key} type="button" onClick={() => setLens(l.key)}
-              style={{ border: "none", cursor: "pointer", padding: "8px 16px", fontSize: "0.9em", fontWeight: 700,
-                background: lens === l.key ? "var(--accent-blue)" : "transparent", color: lens === l.key ? "#fff" : "var(--text-muted)" }}>
+            <button
+              key={l.key}
+              type="button"
+              role="tab"
+              aria-selected={lens === l.key}
+              onClick={() => setLens(l.key)}
+              className={`lens-tab${lens === l.key ? " active" : ""}`}
+            >
               {l.label}
             </button>
           ))}
         </div>
-      </div>
+      </header>
 
       {lens === "fondamentaux" ? <Screener embedded /> : <Predictions embedded />}
     </div>

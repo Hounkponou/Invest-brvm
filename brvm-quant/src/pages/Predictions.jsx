@@ -142,11 +142,9 @@ export default function Predictions({ embedded = false }) {
 
       {/* Horizon + résumé inline (plus de tuiles) */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginBottom: 16 }}>
-        <div style={{ display: "inline-flex", border: "1px solid var(--border-color)", borderRadius: 20, overflow: "hidden" }}>
+        <div className="seg">
           {HORIZON_OPTIONS.map((h) => (
-            <button key={h.key} type="button" onClick={() => setHorizon(h.key)}
-              style={{ border: "none", cursor: "pointer", padding: "6px 12px", fontSize: "0.85em", fontWeight: 700,
-                background: horizon === h.key ? "var(--accent-blue)" : "transparent", color: horizon === h.key ? "#fff" : "var(--text-muted)" }}>
+            <button key={h.key} type="button" onClick={() => setHorizon(h.key)} className={horizon === h.key ? "active" : ""}>
               {h.label}
             </button>
           ))}
@@ -162,11 +160,9 @@ export default function Predictions({ embedded = false }) {
       </div>
 
       {/* Onglets */}
-      <div style={{ display: "inline-flex", border: "1px solid var(--border-color)", borderRadius: 20, overflow: "hidden", marginBottom: 16 }}>
+      <div className="seg" style={{ marginBottom: 16 }}>
         {[{ key: "signals", label: "Signaux du jour" }, { key: "challenge", label: "Challenge" }].map((t) => (
-          <button key={t.key} type="button" onClick={() => setTab(t.key)}
-            style={{ border: "none", cursor: "pointer", padding: "8px 16px", fontSize: "0.9em", fontWeight: 700,
-              background: tab === t.key ? "var(--accent-blue)" : "transparent", color: tab === t.key ? "#fff" : "var(--text-muted)" }}>
+          <button key={t.key} type="button" onClick={() => setTab(t.key)} className={tab === t.key ? "active" : ""}>
             {t.label}
           </button>
         ))}
