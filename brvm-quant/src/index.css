@@ -61,6 +61,85 @@ h4 { font-size: 1rem; font-weight: 700; }
 .topflop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; min-width: 0; }
 .tf-title { margin: 0 0 14px; font-size: 1.05rem; font-weight: 700; }
 
+/* =======================================================================
+   DASHBOARD — « Bulletin de séance » (éditorial / terminal, anti-template)
+   ======================================================================= */
+.dash-num {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.dash-muted { color: var(--text-muted); }
+
+/* Bandeau éditorial */
+.dash-masthead {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+  padding-bottom: 12px; margin-bottom: 18px;
+  border-bottom: 2px solid var(--text-main);
+}
+.dash-kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.7rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--accent-blue);
+}
+.dash-kicker::before { content: ""; width: 22px; height: 2px; background: var(--accent-blue); }
+.dash-title { margin: 6px 0 0; font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; color: var(--text-main); }
+.dash-dateline {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.82rem; color: var(--text-muted); text-transform: capitalize; white-space: nowrap;
+}
+.dash-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* Chapô */
+.dash-lede {
+  margin: 0 0 26px; max-width: 72ch;
+  font-size: 1.08rem; line-height: 1.6; color: var(--text-main); font-weight: 400;
+}
+.dash-lede strong { font-weight: 700; }
+
+/* Blocs de section à filet */
+.dash-block { margin-bottom: 26px; }
+.dash-block-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color);
+}
+.dash-block-head .dash-muted { font-weight: 600; letter-spacing: 0.04em; }
+
+/* Respiration du marché — barre segmentée continue */
+.dash-breadth { display: flex; height: 10px; border-radius: 2px; overflow: hidden; }
+.dash-breadth > span { display: block; }
+.dash-breadth-legend { display: inline-flex; gap: 14px; }
+.dash-breadth-legend em { font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Ruban de performance sectorielle — barres divergentes */
+.dash-sectors { display: flex; flex-direction: column; }
+.dash-sector-row {
+  display: grid; grid-template-columns: minmax(130px, 1.3fr) 2fr 70px 44px;
+  align-items: center; gap: 14px;
+  padding: 9px 0; border-bottom: 1px solid var(--border-color);
+}
+.dash-sector-row:last-child { border-bottom: none; }
+.dash-sector-name { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+.dash-sector-bar { position: relative; height: 16px; }
+.dash-sector-track { position: absolute; inset: 0; }
+.dash-sector-track::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--border-color); }
+.dash-sector-track i { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; }
+.dash-sector-val { text-align: right; font-weight: 700; font-size: 0.9rem; }
+.dash-sector-count { text-align: right; font-size: 0.8rem; color: var(--text-muted); }
+
+.dash-col-title { margin: 0 0 12px; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.dash-footnote { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+
+@media (max-width: 640px) {
+  .dash-title { font-size: 1.45rem; }
+  .dash-masthead { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .dash-lede { font-size: 1rem; }
+  .dash-sector-row { grid-template-columns: minmax(96px, 1.2fr) 1.4fr 58px 32px; gap: 10px; }
+  .dash-sector-name { font-size: 0.82rem; }
+}
+
 /* MARKET TABLE — paradigme « terminal de données » (remplace la grille de cartes) */
 .market-table-wrap { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 6px; }
 .market-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
