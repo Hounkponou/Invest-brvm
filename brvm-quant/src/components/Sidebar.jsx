@@ -38,10 +38,11 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, handleL
               onClick={closeOnMobile}
               className={`nav-btn ${active ? 'active' : ''}`}
               style={{
-                display: 'flex', alignItems: 'center', gap: 11, padding: '11px 12px', borderRadius: 9,
+                display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px',
                 textDecoration: 'none', fontWeight: 600, fontSize: '0.94rem', transition: '0.15s',
-                background: active ? 'var(--accent-blue)' : 'transparent',
-                color: active ? '#fff' : 'var(--text-muted)',
+                borderLeft: `3px solid ${active ? 'var(--accent-blue)' : 'transparent'}`,
+                background: active ? 'var(--bg-hover)' : 'transparent',
+                color: active ? 'var(--text-main)' : 'var(--text-muted)',
               }}
             >
               <Icon width={18} height={18} />
