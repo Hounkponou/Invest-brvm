@@ -133,16 +133,16 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
               <button onClick={() => goFeature('/screener')} style={btnGhost}>Voir le screener</button>
             </div>
             <div style={{ marginTop: 26, display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              <span><strong style={{ color: 'var(--text-main)' }}>{LISTED}</strong> valeurs suivies</span>
-              <span><strong style={{ color: 'var(--text-main)' }}>5/20/60 j</strong> horizons de signal</span>
-              <span><strong style={{ color: 'var(--text-main)' }}>10 ans</strong> d'historique</span>
+              <span><strong className="dash-num" style={{ color: 'var(--text-main)' }}>{LISTED}</strong> valeurs suivies</span>
+              <span><strong className="dash-num" style={{ color: 'var(--text-main)' }}>5/20/60 j</strong> horizons de signal</span>
+              <span><strong className="dash-num" style={{ color: 'var(--text-main)' }}>10 ans</strong> d'historique</span>
             </div>
           </div>
 
           {/* --- Colonne droite : aperçu produit (ancre le côté "vrai outil") --- */}
-          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 22, boxShadow: '0 20px 50px -30px rgba(0,0,0,0.5)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>Marché du jour · BRVM</span>
+          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 10, padding: 20, boxShadow: '0 16px 40px -34px rgba(0,0,0,0.6)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--border-color)' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Marché du jour · BRVM</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--up-color)' }} /> en séance
               </span>
@@ -166,11 +166,11 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
                 const up = r.var >= 0;
                 const col = up ? 'var(--up-color)' : 'var(--down-color)';
                 return (
-                  <div key={r.sigle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 8px', borderTop: '1px solid var(--border-color)' }}>
+                  <div key={r.sigle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 2px', borderTop: '1px solid var(--border-color)' }}>
                     <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{r.sigle}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)', fontSize: '0.88rem' }}>{r.cours} F</span>
-                      <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.82rem', fontWeight: 700, color: col, background: up ? 'var(--up-bg)' : 'var(--down-bg)', padding: '2px 8px', borderRadius: 6, minWidth: 56, textAlign: 'right' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <span className="dash-num" style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>{r.cours} F</span>
+                      <span className="dash-num" style={{ fontSize: '0.86rem', fontWeight: 700, color: col, minWidth: 52, textAlign: 'right' }}>
                         {up ? '+' : ''}{r.var}%
                       </span>
                     </div>
@@ -179,28 +179,29 @@ export default function Landing({ user, toggleTheme, isDarkMode, setIsSignUp, se
               })}
             </div>
 
-            {/* Bandeau signal */}
-            <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 12px', borderRadius: 10, background: 'var(--accent-blue-soft)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Signal IA · SGBC</span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-blue)' }}>Achat modéré · 8/10</span>
+            {/* Bandeau signal — à plat */}
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Signal IA · SGBC</span>
+              <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--accent-blue)' }}>Achat modéré · 8/10</span>
             </div>
           </div>
 
         </div>
 
-        {/* ============ FONCTIONNALITÉS (sobres, alignées à gauche) ============ */}
-        <div style={{ marginTop: 'clamp(48px, 8vw, 88px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
-          {FEATURES.map((f) => (
-            <div key={f.key} style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 14, padding: 24, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-blue-soft)', color: 'var(--accent-blue)', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
-                <f.icon width={20} height={20} />
+        {/* ============ FONCTIONNALITÉS — liste numérotée éditoriale ============ */}
+        <div style={{ marginTop: 'clamp(48px, 8vw, 88px)' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', paddingBottom: 10, borderBottom: '1px solid var(--border-color)' }}>
+            Ce que vous pouvez faire
+          </div>
+          {FEATURES.map((f, i) => (
+            <button key={f.key} onClick={() => goFeature(f.route)} className="land-row">
+              <span className="dash-num land-row-idx">{String(i + 1).padStart(2, '0')}</span>
+              <div className="land-row-body">
+                <h3 style={{ margin: '0 0 5px', fontSize: '1.12rem', fontWeight: 700 }}>{f.title}</h3>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: 1.5, maxWidth: '62ch' }}>{f.desc}</p>
               </div>
-              <h3 style={{ margin: '0 0 8px', fontSize: '1.05rem', fontWeight: 700 }}>{f.title}</h3>
-              <p style={{ margin: '0 0 18px', color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: 1.55, flex: 1 }}>{f.desc}</p>
-              <button onClick={() => goFeature(f.route)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: 'var(--accent-blue)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', padding: 0, alignSelf: 'flex-start' }}>
-                {f.label} <Ico.arrow width={15} height={15} />
-              </button>
-            </div>
+              <span className="land-row-cta">{f.label} <Ico.arrow width={15} height={15} /></span>
+            </button>
           ))}
         </div>
       </main>

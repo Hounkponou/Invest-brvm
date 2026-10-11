@@ -146,6 +146,17 @@ h4 { font-size: 1rem; font-weight: 700; }
 .seg button:hover { color: var(--text-main); }
 .seg button.active { background: var(--bg-hover); color: var(--text-main); }
 
+/* Landing — liste de capacités numérotée (remplace la grille de cartes SaaS) */
+.land-row { width: 100%; text-align: left; background: transparent; border: none; border-bottom: 1px solid var(--border-color); cursor: pointer; display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: clamp(16px, 3vw, 36px); padding: 22px 4px; transition: background .12s; }
+.land-row:hover { background: var(--bg-hover); }
+.land-row-idx { font-size: 1.5rem; font-weight: 800; color: var(--accent-blue); opacity: 0.85; }
+.land-row-body h3 { color: var(--text-main); }
+.land-row-cta { display: inline-flex; align-items: center; gap: 6px; color: var(--accent-blue); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+@media (max-width: 640px) {
+  .land-row { grid-template-columns: auto 1fr; row-gap: 8px; }
+  .land-row-cta { grid-column: 1 / -1; }
+}
+
 @media (max-width: 640px) {
   .dash-title { font-size: 1.45rem; }
   .dash-masthead { align-items: flex-start; flex-direction: column; gap: 8px; }
