@@ -28,6 +28,8 @@ import NewsPanel from './components/NewsPanel';
 import usePredictions from './hooks/usePredictions';
 import useMarketData from './hooks/useMarketData';
 import useStockHistory from './hooks/useStockHistory';
+import useAuth from './hooks/useAuth';
+import usePortfolio from './hooks/usePortfolio';
 import useGeminiRecos from './hooks/useGeminiRecos';
 import useSeasonality from './hooks/useSeasonality';
 import PredictionAnalysisPanel from './components/PredictionAnalysisPanel';
@@ -78,8 +80,13 @@ export default function App() {
   // ==========================================
   // 1. ÉTATS GLOBAUX
   // ==========================================
-  const [sessionLoading, setSessionLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  // Authentification (session + formulaire de connexion) — encapsulée dans le hook.
+  const {
+    user, sessionLoading,
+    showAuthModal, setShowAuthModal, isSignUp, setIsSignUp,
+    authEmail, setAuthEmail, authPassword, setAuthPassword,
+    authLoading, handleAuth, handleLogout,
+  } = useAuth();
 
   // ── THÈME UNIFIÉ ────────────────────────────────────────────────────────
   // Un SEUL hook pilote désormais tout l'app (anciennes pages + Module
@@ -95,12 +102,6 @@ export default function App() {
     () => typeof window === 'undefined' || window.innerWidth > 768
   );
   
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
-
   // Snapshot marché (+ fraîcheur) — chargement/polling encapsulés dans le hook.
   const { marketData, loadingMarket, marketMeta } = useMarketData(user);
   
@@ -140,126 +141,23 @@ export default function App() {
   const [loadingSim, setLoadingSim] = useState(false);
   const [backtestResult, setBacktestResult] = useState(null);
   
-  const [savedPortfolio, setSavedPortfolio] = useState([]);
-  const [manualSymbol, setManualSymbol] = useState('');
-  const [manualShares, setManualShares] = useState('');
-  const [manualPrice, setManualPrice] = useState('');
-
-  const [sellModal, setSellModal] = useState({ isOpen: false, sigle: '', maxShares: 0 });
-  const [sellQuantity, setSellQuantity] = useState('');
-  const [isSelling, setIsSelling] = useState(false);
+  // Portefeuille cloud + modale de vente — logique isolée dans le hook.
+  const {
+    savedPortfolio, setSavedPortfolio,
+    manualSymbol, setManualSymbol, manualShares, setManualShares, manualPrice, setManualPrice,
+    handleManualAdd,
+    sellModal, setSellModal, sellQuantity, setSellQuantity, isSelling,
+    openSellModal, confirmPartialSell,
+  } = usePortfolio(user, marketData);
 
   const [filterMinPrice, setFilterMinPrice] = useState('');
   const [filterMaxPrice, setFilterMaxPrice] = useState('');
 
-  // ==========================================
-  // 2. EFFETS (Session & Synchronisation base)
-  // ==========================================
-  useEffect(() => {
-    // Le thème est géré par le hook useTheme (data-theme + localStorage 'ipx_theme').
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
-      setSessionLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!user) return; 
-    
-    async function fetchCloudPortfolio() {
-      const { data } = await supabase.from('user_portfolios').select('*').eq('user_id', user.id);
-      if (data) {
-        setSavedPortfolio(data.map(item => ({ id: item.id, sigle: item.sigle, nom: item.nom, shares: Number(item.shares), buyPrice: Number(item.buy_price), total: Number(item.total) })));
-      }
-    }
-
-    fetchCloudPortfolio();
-  }, [user]);
 
   // ==========================================
   // 3. FONCTIONS UTILITAIRES & ACTIONS
   // ==========================================
   // toggleTheme provient désormais du hook useTheme (bascule dark ⇄ solar).
-
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    setAuthLoading(true);
-    let error;
-    if (isSignUp) {
-      const res = await supabase.auth.signUp({ email: authEmail, password: authPassword });
-      error = res.error;
-      if(!error) { alert("Inscription réussie !"); setShowAuthModal(false); }
-    } else {
-      const res = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
-      error = res.error;
-      if(!error) setShowAuthModal(false);
-    }
-    setAuthLoading(false);
-    if (error) alert(error.message);
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const handleManualAdd = async (e) => {
-    e.preventDefault();
-    const cleanSymbol = manualSymbol.trim().toUpperCase();
-    if (!cleanSymbol || !manualShares || !manualPrice) return;
-    
-    const stockInfo = marketData.find(s => s.symbole === cleanSymbol);
-    if (!stockInfo) {
-      alert(`L'action "${cleanSymbol}" est introuvable. Veuillez vérifier le sigle (ex: SGBC).`);
-      return;
-    }
-
-    const newEntry = { user_id: user.id, sigle: cleanSymbol, nom: stockInfo.nom, shares: Number(manualShares), buy_price: Number(manualPrice), total: Number(manualShares) * Number(manualPrice) };
-    const { data, error } = await supabase.from('user_portfolios').insert([newEntry]).select();
-    if (!error && data) {
-      setSavedPortfolio([...savedPortfolio, { id: data[0].id, sigle: data[0].sigle, nom: data[0].nom, shares: data[0].shares, buyPrice: data[0].buy_price, total: data[0].total }]);
-      setManualSymbol(''); setManualShares(''); setManualPrice('');
-    }
-  };
-
-  const openSellModal = (sigle, maxShares) => {
-    setSellModal({ isOpen: true, sigle, maxShares });
-    setSellQuantity('');
-  };
-
-  const confirmPartialSell = async () => {
-    const qtyToSell = Number(sellQuantity);
-    if (qtyToSell <= 0 || qtyToSell > sellModal.maxShares) { alert("Quantité invalide."); return; }
-    setIsSelling(true);
-    let remainingToSell = qtyToSell;
-    const lots = savedPortfolio.filter(p => p.sigle === sellModal.sigle).sort((a,b) => a.id.localeCompare(b.id));
-    const toDelete = []; const toUpdate = [];
-
-    for (let lot of lots) {
-      if (remainingToSell <= 0) break;
-      if (lot.shares <= remainingToSell) {
-        toDelete.push(lot.id); remainingToSell -= lot.shares;
-      } else {
-        const newShares = lot.shares - remainingToSell;
-        toUpdate.push({ id: lot.id, shares: newShares, buyPrice: lot.buyPrice });
-        remainingToSell = 0;
-      }
-    }
-
-    if (toDelete.length > 0) await supabase.from('user_portfolios').delete().in('id', toDelete);
-    for (let update of toUpdate) {
-      await supabase.from('user_portfolios').update({ shares: update.shares, total: update.shares * update.buyPrice }).eq('id', update.id);
-    }
-
-    const { data } = await supabase.from('user_portfolios').select('*').eq('user_id', user.id);
-    if (data) setSavedPortfolio(data.map(item => ({ id: item.id, sigle: item.sigle, nom: item.nom, shares: Number(item.shares), buyPrice: Number(item.buy_price), total: Number(item.total) })));
-    setIsSelling(false); setSellModal({ isOpen: false, sigle: '', maxShares: 0 }); setSellQuantity('');
-  };
 
   // Récupère ~3 ans d'historique (date, close) par titre, depuis le bucket CDN
   // (déjà servi au graphique de détail), avec repli sur full_stock_pro.
