@@ -21,7 +21,7 @@ function relDate(d) {
 
 export default function NewsPanel({ news }) {
   const items = news?.items || [];
-  const wrap = { background: "var(--bg-panel)", border: "1px solid var(--border-color)", borderRadius: 12, padding: 20, marginTop: 20 };
+  const wrap = { borderTop: "1px solid var(--border-color)", paddingTop: 20, marginTop: 24 };
 
   return (
     <div style={wrap}>

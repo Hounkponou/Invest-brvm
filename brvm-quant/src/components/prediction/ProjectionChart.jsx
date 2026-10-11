@@ -42,7 +42,7 @@ export default function ProjectionChart({ symbol, predictions = [], market, risk
   }
 
   return (
-    <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border-color)", borderRadius: 12, padding: 20, marginTop: 16 }}>
+    <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border-color)", borderRadius: 8, padding: 20, marginTop: 16 }}>
       <h3 style={{ margin: "0 0 4px", color: "var(--text-main)" }}>Trajectoires prédites</h3>
       <div style={{ color: "var(--text-muted)", fontSize: "0.82em", marginBottom: 12 }}>
         Du cours actuel <strong style={{ color: "var(--text-main)" }}>{fcfa(start)}</strong> vers le cours cible de chaque horizon,

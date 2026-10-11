@@ -19,13 +19,13 @@ export default function GeminiRecoPanel({ gemini }) {
   const sources = Array.isArray(gemini.sources) ? gemini.sources : [];
 
   return (
-    <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border-color)", borderRadius: 10, padding: 20, marginTop: 16 }}>
+    <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: 20, marginTop: 24 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
         <h3 style={{ margin: 0, color: "var(--text-main)" }}>Recommandation IA (Gemini)</h3>
         <span style={{ fontWeight: 800, color, fontSize: "1.05em" }}>{reco}</span>
         {gemini.sentiment_web && (
-          <span style={{ fontSize: "0.75em", color: "var(--text-muted)", border: "1px solid var(--border-color)", borderRadius: 20, padding: "2px 8px" }}>
-            Web : {gemini.sentiment_web}
+          <span style={{ fontSize: "0.82em", color: "var(--text-muted)", fontWeight: 600 }}>
+            · Web : {gemini.sentiment_web}
           </span>
         )}
       </div>

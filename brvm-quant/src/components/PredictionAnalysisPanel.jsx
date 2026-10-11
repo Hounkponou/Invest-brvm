@@ -83,7 +83,7 @@ export default function PredictionAnalysisPanel({ symbol, predictions = [], mark
   if (rows.length === 0) return null;
 
   return (
-    <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border-color)", borderRadius: 10, padding: 20, marginTop: 20 }}>
+    <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: 20, marginTop: 24 }}>
       <h3 style={{ margin: 0, color: "var(--text-main)" }}>Signaux prédictifs</h3>
       <div style={{ color: "var(--text-muted)", fontSize: "0.82em", marginTop: 2 }}>
         Par horizon — modèle XGBoost calibré + saisonnalité, croisé avec l'avis IA. N'est pas un conseil.

@@ -61,7 +61,7 @@ export default function RiskPanel({ risk }) {
   const betaRef = beta.sector != null ? beta.sectorName : "Marché";
   const vh = horizons[varH] || {};
 
-  const wrap = { background: "var(--bg-panel)", border: "1px solid var(--border-color)", borderRadius: 10, padding: 20, marginTop: 20 };
+  const wrap = { borderTop: "1px solid var(--border-color)", paddingTop: 20, marginTop: 24 };
 
   return (
     <div style={wrap}>
@@ -98,11 +98,9 @@ export default function RiskPanel({ risk }) {
         <div style={{ marginTop: 16, paddingTop: 12, borderTop: "2px solid var(--border-color)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <div style={{ fontSize: "0.8em", fontWeight: 700, color: "var(--text-main)" }}>Perte maximale probable (VaR historique)</div>
-            <div style={{ display: "inline-flex", border: "1px solid var(--border-color)", borderRadius: 20, overflow: "hidden" }}>
+            <div className="seg">
               {available.map((k) => (
-                <button key={k} type="button" onClick={() => setVarH(k)}
-                  style={{ border: "none", cursor: "pointer", padding: "4px 10px", fontSize: "0.8em", fontWeight: 700,
-                    background: varH === k ? "var(--accent-blue)" : "transparent", color: varH === k ? "#fff" : "var(--text-muted)" }}>
+                <button key={k} type="button" onClick={() => setVarH(k)} className={varH === k ? "active" : ""}>
                   {VAR_LABELS[k] || `${k} j`}
                 </button>
               ))}

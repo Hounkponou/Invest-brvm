@@ -333,9 +333,11 @@ export default function App() {
         <div className="stock-detail" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--bg-base)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '30px 40px', overflowY: 'auto' }}>
           <div className="stock-detail-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
-              <h2 style={{ margin: 0, fontSize: '2.5em', color: 'var(--text-main)' }}>{selectedStock.nom}</h2>
-              <span style={{ color: 'var(--text-muted)', fontSize: '1.2em', marginRight: '15px' }}>{selectedStock.symbole} • {getSector(selectedStock.symbole)}</span>
-              <span style={{ color: selectedStock.variation >= 0 ? 'var(--up-color)' : 'var(--down-color)', fontSize: '1.2em', fontWeight: 'bold' }}>{selectedStock.close?.toLocaleString()} F ({selectedStock.variation >= 0 ? '+' : ''}{selectedStock.variation}%)</span>
+              <div className="dash-kicker">{selectedStock.symbole} · {getSector(selectedStock.symbole)}</div>
+              <h2 className="dash-title" style={{ fontSize: '1.9rem' }}>{selectedStock.nom}</h2>
+              <div className="dash-num" style={{ marginTop: 8, fontSize: '1.1rem', fontWeight: 700, color: selectedStock.variation >= 0 ? 'var(--up-color)' : 'var(--down-color)' }}>
+                {selectedStock.close?.toLocaleString('fr-FR')} F ({selectedStock.variation >= 0 ? '+' : ''}{selectedStock.variation}%)
+              </div>
             </div>
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
               {/* Toggles moyennes mobiles : l'utilisateur affiche celles qu'il veut */}
@@ -377,50 +379,32 @@ export default function App() {
             </div>
           </div>
 
-          {/* CRÉATION DU BLOC QUANT : SIGNAUX DE TRADING IA (ATR DYNAMIQUE) */}
-          <div style={{ marginBottom: '20px', background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', border: '1px solid var(--accent-blue)' }}>
-            <div className="stock-detail-trading" style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
-              <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Entrée optimale</div>
-                <div style={{ fontSize: '1.8em', color: 'var(--up-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.entry?.toLocaleString()} F</div>
-                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Prix conseillé</div>
-              </div>
-              <div style={{ flex: 1, textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Objectif</div>
-                <div style={{ fontSize: '1.8em', color: 'var(--accent-blue)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.exit?.toLocaleString()} F</div>
-                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Take Profit</div>
-              </div>
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Stop-Loss</div>
-                <div style={{ fontSize: '1.8em', color: 'var(--down-color)', fontWeight: '900', marginTop: '5px' }}>{selectedStock.stopLoss?.toLocaleString()} F</div>
-                <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '4px' }}>Sécurité (-1.5x ATR)</div>
-              </div>
+          {/* PLAN DE TRADING (ATR dynamique) — bande plate */}
+          <section className="dash-block" style={{ marginTop: 4 }}>
+            <div className="dash-block-head">
+              <span>Plan de trading · ATR</span>
+              <span className="dash-muted" style={{ fontWeight: 600 }}>
+                Ratio gain/risque
+                <strong className="dash-num" style={{ marginLeft: 6, color: ((selectedStock.exit - selectedStock.entry) / (selectedStock.entry - selectedStock.stopLoss)) >= 2 ? 'var(--up-color)' : 'var(--warn-color)' }}>
+                  1 : {((selectedStock.exit - selectedStock.entry) / (selectedStock.entry - selectedStock.stopLoss)).toFixed(1)}
+                </strong>
+              </span>
             </div>
-            
-            <div style={{ textAlign: 'center', borderTop: '1px dashed var(--border-color)', paddingTop: '10px', fontSize: '0.9em' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Ratio Gain / Risque : </span>
-              <strong style={{ color: ((selectedStock.exit - selectedStock.entry) / (selectedStock.entry - selectedStock.stopLoss)) >= 2 ? 'var(--up-color)' : 'var(--warn-color)' }}>
-                1 : {((selectedStock.exit - selectedStock.entry) / (selectedStock.entry - selectedStock.stopLoss)).toFixed(1)}
-              </strong>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85em', marginLeft: '10px' }}>(Volatilité journalière estimée : {selectedStock.volatility} F)</span>
+            <div className="pf-kpis" style={{ marginBottom: 0 }}>
+              <div className="pf-kpi"><div className="pf-kpi-label">Entrée optimale</div><div className="pf-kpi-val dash-num" style={{ color: 'var(--up-color)' }}>{selectedStock.entry?.toLocaleString('fr-FR')} F</div><div className="pf-kpi-desc">Prix conseillé</div></div>
+              <div className="pf-kpi"><div className="pf-kpi-label">Objectif</div><div className="pf-kpi-val dash-num" style={{ color: 'var(--accent-blue)' }}>{selectedStock.exit?.toLocaleString('fr-FR')} F</div><div className="pf-kpi-desc">Take profit</div></div>
+              <div className="pf-kpi"><div className="pf-kpi-label">Stop-loss</div><div className="pf-kpi-val dash-num" style={{ color: 'var(--down-color)' }}>{selectedStock.stopLoss?.toLocaleString('fr-FR')} F</div><div className="pf-kpi-desc">−1.5× ATR · volatilité {selectedStock.volatility} F</div></div>
             </div>
-          </div>
+          </section>
 
-          {/* RECONDUCTION DES ANALYSES FONDAMENTALES */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-            <div style={{ background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', borderLeft: `4px solid var(--accent-blue)` }}>
-              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px', fontWeight: 'bold' }}>Revenu Passif</div>
-              <div style={{ fontSize: '1.3em', color: 'var(--text-main)', fontWeight: '900' }}>{selectedStock.rendement_dividende ? `${selectedStock.rendement_dividende}% / an` : 'N/A'}</div>
+          {/* FONDAMENTAUX — bande plate */}
+          <section className="dash-block">
+            <div className="dash-block-head"><span>Fondamentaux</span></div>
+            <div className="pf-kpis" style={{ marginBottom: 16 }}>
+              <div className="pf-kpi"><div className="pf-kpi-label">Revenu passif</div><div className="pf-kpi-val dash-num">{selectedStock.rendement_dividende ? `${selectedStock.rendement_dividende}% /an` : 'N/A'}</div></div>
+              <div className="pf-kpi"><div className="pf-kpi-label">Valorisation</div><div className="pf-kpi-val" style={{ color: getValColor(selectedStock.statut_valorisation), fontSize: '1.15rem' }}>{selectedStock.statut_valorisation || 'N/A'}</div></div>
+              <div className="pf-kpi"><div className="pf-kpi-label">Momentum RSI</div><div className="pf-kpi-val" style={{ color: getRsiColor(selectedStock.statut_rsi), fontSize: '1.15rem' }}>{selectedStock.statut_rsi || 'Neutre'}</div></div>
             </div>
-            <div style={{ background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', borderLeft: `4px solid ${getValColor(selectedStock.statut_valorisation)}` }}>
-              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px', fontWeight: 'bold' }}>Valorisation</div>
-              <div style={{ fontSize: '1.3em', color: getValColor(selectedStock.statut_valorisation), fontWeight: '900' }}>{selectedStock.statut_valorisation || 'N/A'}</div>
-            </div>
-            <div style={{ background: 'var(--bg-panel)', padding: '15px', borderRadius: '10px', borderLeft: `4px solid ${getRsiColor(selectedStock.statut_rsi)}` }}>
-              <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px', fontWeight: 'bold' }}>Momentum RSI</div>
-              <div style={{ fontSize: '1.3em', color: getRsiColor(selectedStock.statut_rsi), fontWeight: '900' }}>{selectedStock.statut_rsi || 'Neutre'}</div>
-            </div>
-
             {/* Comparaison du PER de la société à la moyenne de son secteur */}
             <PerSectorCompare
               per={selectedStock.per}
@@ -428,40 +412,31 @@ export default function App() {
               sectorName={getSector(selectedStock.symbole)}
               count={sectorPerStats[getSector(selectedStock.symbole)]?.count || 0}
             />
-          </div>
+          </section>
 
-          {/* ANALYSE TENDANCE PAR MOYENNES MOBILES */}
+          {/* TENDANCE PAR MOYENNES MOBILES — libellés plats */}
           {!loadingHistory && maAnalysis && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.8em', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>Tendance (moyennes mobiles) :</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '16px', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Tendance MM</span>
               {[
-                { lbl: 'Cours vs MM20', v: maAnalysis.above20, hint: 'court terme' },
-                { lbl: 'Cours vs MM50', v: maAnalysis.above50, hint: 'moyen terme' },
-                { lbl: 'Cours vs MM100', v: maAnalysis.above100, hint: 'long terme' },
+                { lbl: 'MM20', v: maAnalysis.above20, hint: 'court terme' },
+                { lbl: 'MM50', v: maAnalysis.above50, hint: 'moyen terme' },
+                { lbl: 'MM100', v: maAnalysis.above100, hint: 'long terme' },
               ].map(({ lbl, v, hint }) => (
-                <span key={lbl} title={hint} style={{
-                  fontSize: '0.82em', fontWeight: 700, padding: '5px 10px', borderRadius: '20px',
-                  color: v == null ? 'var(--text-muted)' : v ? 'var(--up-color)' : 'var(--down-color)',
-                  background: 'var(--bg-base)', border: '1px solid var(--border-color)',
-                }}>
-                  {lbl} : {v == null ? 'N/A' : v ? 'au-dessus ▲' : 'en-dessous ▼'}
+                <span key={lbl} title={hint} style={{ fontSize: '0.86rem', fontWeight: 700, color: v == null ? 'var(--text-muted)' : v ? 'var(--up-color)' : 'var(--down-color)' }}>
+                  {lbl} {v == null ? '—' : v ? '▲' : '▼'}
                 </span>
               ))}
               {maAnalysis.cross && (
-                <span style={{
-                  fontSize: '0.82em', fontWeight: 700, padding: '5px 10px', borderRadius: '20px',
-                  color: maAnalysis.cross === 'golden' ? 'var(--up-color)' : 'var(--down-color)',
-                  background: maAnalysis.cross === 'golden' ? 'var(--up-soft, var(--bg-base))' : 'var(--down-soft, var(--bg-base))',
-                  border: `1px solid ${maAnalysis.cross === 'golden' ? 'var(--up-color)' : 'var(--down-color)'}`,
-                }}>
-                  {maAnalysis.cross === 'golden' ? 'MM50 > MM100 · tendance de fond haussière' : 'MM50 < MM100 · tendance de fond baissière'}
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: maAnalysis.cross === 'golden' ? 'var(--up-color)' : 'var(--down-color)' }}>
+                  · {maAnalysis.cross === 'golden' ? 'MM50 > MM100, fond haussier' : 'MM50 < MM100, fond baissier'}
                 </span>
               )}
             </div>
           )}
 
           {/* ZONE DE GRAPHIQUES HISTORIQUES */}
-          <div className="stock-chart-panel" style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', minHeight: '350px' }}>
+          <div className="stock-chart-panel" style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px', minHeight: '350px' }}>
             {loadingHistory ? <div className="skeleton" style={{ width: '100%', height: '100%', minHeight: '310px' }} /> : (
              <div style={{ width: '100%', height: '100%', overflowX: isMobile ? 'auto' : 'visible', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' }}>
               {isMobile && <div style={{ fontSize: '0.72em', color: 'var(--text-muted)', marginBottom: 4 }}>← faites glisser le graphique →</div>}
