@@ -1,132 +1,342 @@
 {
-  "date": "2026-10-14",
+  "date": "2026-10-15",
   "market_sentiment": "Baissier",
-  "generated_at": "2026-10-14T21:38:56+00:00",
+  "generated_at": "2026-10-15T21:21:04+00:00",
   "recos": {
-    "STBC": {
-      "nom": "SITAB COTE D'IVOIRE",
+    "ORGT": {
+      "nom": "ORAGROUP TOGO",
       "recommandation": "Achat modéré",
-      "justification": "Une valorisation modérée (PER 10,5) couplée à un RSI proche de la zone de survente offre un bon point d'entrée défensif. Le dossier présente un profil solide pour résister au repli global du marché.",
-      "sentiment_web": "Positif",
+      "justification": "La valorisation reste attrayante avec un PER de 9,01 et un RSI proche de la zone de survente. Le titre fait preuve de résilience dans un marché baissier, offrant un bon point d'entrée à court terme.",
+      "sentiment_web": "Neutre",
       "sources": []
     },
     "PALC": {
       "nom": "PALM COTE D'IVOIRE",
       "recommandation": "Achat fort",
-      "justification": "Avec un PER très décoté sous les 8x et un RSI à 36, le titre offre une marge de sécurité majeure. Sa surperformance potentielle à 15 jours est soutenue par d'excellents fondamentaux opérationnels.",
+      "justification": "Avec un PER décoté à 7,66 et un RSI à 33, Palmci offre une excellente marge de sécurité soutenue par la fermeté des cours de l'huile de palme.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "ETIT": {
+      "nom": "Ecobank Transnational Incorporated TOGO",
+      "recommandation": "Achat fort",
+      "justification": "Son PER exceptionnellement bas (3,4) et son RSI en limite de survente (30) constituent une opportunité value majeure, même en contexte de correction du marché.",
       "sentiment_web": "Positif",
       "sources": []
     },
     "SGBC": {
       "nom": "SOCIETE GENERALE COTE D'IVOIRE",
-      "recommandation": "Achat modéré",
-      "justification": "Valeur refuge incontournable de la BRVM, SGBC fait preuve d'une parfaite stabilité dans un marché baissier. Son profil de distribution et sa résilience justifient une accumulation stratégique.",
+      "recommandation": "Conservation",
+      "justification": "Le leader bancaire ivoirien maintient une stabilité remarquable (variation quasi nulle) et un RSI neutre (51). Les fondamentaux sont solides mais le marché baissier limite le potentiel d'appréciation à 15 jours.",
       "sentiment_web": "Positif",
+      "sources": []
+    },
+    "SNTS": {
+      "nom": "SONATEL SENEGAL",
+      "recommandation": "Conservation",
+      "justification": "Le titre subit des prises de bénéfices légitimes après un rallye haussier qui l'a porté proche de la surachat (RSI 69). Il est préférable d'attendre la stabilisation des cours avant de renforcer.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "BOAC": {
+      "nom": "BANK OF AFRICA COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "La valeur stabilise son cours avec un RSI à 37, mais le multiple de valorisation (PER 12,81) n'incite pas à des achats agressifs dans la conjoncture actuelle.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "CABC": {
+      "nom": "SICABLE COTE D'IVOIRE",
+      "recommandation": "Achat modéré",
+      "justification": "Avec un RSI tombé à 20, le titre se trouve en zone de survente prononcée. Un rebond technique à court terme est très probable sur les deux prochaines semaines.",
+      "sentiment_web": "Neutre",
       "sources": []
     },
     "ECOC": {
       "nom": "ECOBANK COTE D'IVOIRE",
-      "recommandation": "Conservation",
-      "justification": "Bien que le RSI approche de la survente (35), le PER de 14x reste supérieur à la moyenne sectorielle bancaire. Il est prudent d'attendre la stabilisation des cours avant de se repositionner.",
-      "sentiment_web": "Neutre",
+      "recommandation": "Achat modéré",
+      "justification": "Ecobank CI montre une divergence haussière face au marché (+0,60%) tout en affichant un RSI attractif (32). La dynamique opérationnelle soutient un retournement haussier rapide.",
+      "sentiment_web": "Positif",
       "sources": []
     },
-    "ETIT": {
-      "nom": "Ecobank Transnational Incorporated TOGO",
+    "NEIC": {
+      "nom": "NEI-CEDA COTE D'IVOIRE",
       "recommandation": "Conservation",
-      "justification": "Le titre affiche une valorisation plancher remarquable (PER 3,4) mais souffre d'un manque de catalyseur immédiat. La liquidité et la conjoncture baissière invitent à la patience.",
-      "sentiment_web": "Neutre",
+      "justification": "Le RSI à 18 suggère un excès baissier, mais l'étroitesse habituelle du carnet d'ordres invite à la prudence avant tout positionnement spéculatif.",
+      "sentiment_web": "Négatif",
       "sources": []
     },
     "NSBC": {
       "nom": "NSIA BANQUE COTE D'IVOIRE",
-      "recommandation": "Conservation",
-      "justification": "La valorisation est équilibrée et la dynamique technique neutre dans un contexte atone. Le titre devrait consolider horizontalement à court terme.",
-      "sentiment_web": "Neutre",
+      "recommandation": "Achat modéré",
+      "justification": "Le titre touche son support technique avec un RSI à 30 dans le sillage de bons fondamentaux de rentabilité. Une reprise technique vers ses moyennes mobiles est attendue à cet horizon.",
+      "sentiment_web": "Positif",
       "sources": []
     },
     "SCRC": {
       "nom": "SUCRIVOIRE COTE D'IVOIRE",
       "recommandation": "Vente",
-      "justification": "Malgré un RSI en forte survente (27), l'absence de bénéfices nets et les défis structurels de la filière sucrière incitent à éviter le dossier. Le risque de poursuite de la baisse reste élevé.",
+      "justification": "Malgré un RSI en capitulation totale (6), les résultats déficitaires et l'absence de PER calculable rendent le dossier trop risqué en phase de marché baissier.",
       "sentiment_web": "Négatif",
       "sources": []
     },
-    "ORGT": {
-      "nom": "ORAGROUP TOGO",
+    "BOAM": {
+      "nom": "BANK OF AFRICA MALI",
       "recommandation": "Conservation",
-      "justification": "Le multiple de bénéfice de 9x est attractif mais les incertitudes relatives à l'évolution de son tour de table limitent la visibilité. Une position d'attente s'impose.",
+      "justification": "La chute brutale du jour (-4,92%) place le titre en survente extrême (RSI 18), mais le risque pays et la valorisation élevée (PER 14,12) commandent d'attendre un signal de stabilisation.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "STBC": {
+      "nom": "SITAB COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "Valeur défensive par excellence, Sitab résiste bien à la baisse générale avec un PER raisonnable (10,41). Elle constitue un bon amortisseur de portefeuille à court terme.",
       "sentiment_web": "Neutre",
       "sources": []
     },
-    "NEIC": {
-      "nom": "NEI-CEDA COTE D'IVOIRE",
-      "recommandation": "Achat modéré",
-      "justification": "Le rebond de +3,11% en sortie d'extrême survente (RSI 18) ouvre la voie à un rattrapage technique rapide à 15 jours. Une opportunité tactique de trading contracyclique intéressante.",
-      "sentiment_web": "Positif",
+    "UNXC": {
+      "nom": "UNIWAX COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Le rebond du jour semble purement technique au vu des difficultés structurelles du secteur textile et de la non-rentabilité actuelle de la société.",
+      "sentiment_web": "Négatif",
       "sources": []
     },
     "SMBC": {
       "nom": "SMB COTE D'IVOIRE",
       "recommandation": "Conservation",
-      "justification": "Un PER inférieur à 10x compense un essoufflement technique récent. Le titre devrait naviguer dans un canal latéral le temps que le marché retrouve des couleurs.",
+      "justification": "La valorisation est équilibrée (PER 9,24) et les indicateurs techniques sont au point mort (RSI 46, variation nulle). Aucun catalyseur immédiat n'émerge à court terme.",
       "sentiment_web": "Neutre",
       "sources": []
     },
     "SPHC": {
       "nom": "SAPH COTE D'IVOIRE",
       "recommandation": "Achat modéré",
-      "justification": "La chute de plus de 4% sur la séance crée une opportunité d'achat sur un titre valorisé à moins de 8 fois les résultats. Le cours approche d'un support technique propice au rebond.",
+      "justification": "SAPH surperforme nettement la tendance globale (+3,24%) avec un PER attractif sous les 8x, portée par une conjoncture internationale favorable sur le caoutchouc.",
       "sentiment_web": "Positif",
-      "sources": []
-    },
-    "BOABF": {
-      "nom": "BANK OF AFRICA BURKINA FASO",
-      "recommandation": "Vente",
-      "justification": "Le PER de 18,4 est particulièrement élevé pour une banque dans l'environnement sahélien actuel. Une correction technique est probable pour ramener la valeur vers ses moyennes historiques.",
-      "sentiment_web": "Négatif",
       "sources": []
     },
     "SLBC": {
       "nom": "SOLIBRA COTE D'IVOIRE",
       "recommandation": "Conservation",
-      "justification": "Le redressement opérationnel soutient le titre qui gagne 1,6%, mais la valorisation à 13,5x le PER reflète déjà une large part des bonnes nouvelles. À garder en portefeuille sans surpondérer.",
-      "sentiment_web": "Neutre",
-      "sources": []
-    },
-    "TTLS": {
-      "nom": "TOTALENERGIES MARKETING SENEGAL",
-      "recommandation": "Conservation",
-      "justification": "Belle tenue de la séance (+3,19%) qui témoigne de l'intérêt pour son dividende, mais le PER approche des 18x. Le potentiel de hausse additionnel semble plafonné à court terme.",
+      "justification": "Le score quantitatif modeste (6/10) et un RSI médian à 56 n'offrent pas de point d'entrée attractif dans un marché vendeur.",
       "sentiment_web": "Neutre",
       "sources": []
     },
     "PRSC": {
       "nom": "TRACTAFRIC MOTORS COTE D'IVOIRE",
       "recommandation": "Vente",
-      "justification": "Affichant un PER tendu de 19x et une liquidité modérée, la valeur est très exposée à des dégagements en période de décrue des indices. Mieux vaut acter des allégements.",
+      "justification": "Affichant un PER élevé de 18,53 dans un contexte de ralentissement cyclique, le titre subit des dégagements (-2,19%) qui risquent de s'accentuer sous la pression du marché.",
       "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "BOABF": {
+      "nom": "BANK OF AFRICA BURKINA FASO",
+      "recommandation": "Conservation",
+      "justification": "Dans un marché baissier, le titre affiche une bonne résilience avec un RSI équilibré à 47. Les positions existantes peuvent être maintenues sans renforcement immédiat.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BOAS": {
+      "nom": "BANK OF AFRICA SENEGAL",
+      "recommandation": "Achat modéré",
+      "justification": "Sa valorisation attrayante (PER de 13,37) et sa capacité à clôturer dans le vert malgré la tendance globale en font une opportunité défensive solide.",
+      "sentiment_web": "Positif",
       "sources": []
     },
     "NTLC": {
       "nom": "NESTLE COTE D'IVOIRE",
-      "recommandation": "Vente",
-      "justification": "Avec un RSI à 64 proche du surachat et un multiple de valorisation exigeant (18,4x), le risque de consolidation est prépondérant. Une prise de bénéfices partielle est recommandée.",
-      "sentiment_web": "Neutre",
-      "sources": []
-    },
-    "SNTS": {
-      "nom": "SONATEL SENEGAL",
-      "recommandation": "Vente",
-      "justification": "Bien que leader incontesté de la BRVM, son RSI culmine à un niveau d'extrême surachat de 90. Un repli technique ou des prises de profits à horizon 15 jours sont inévitables.",
+      "recommandation": "Achat modéré",
+      "justification": "Valeur refuge de l'agroalimentaire, Nestlé CI surperforme la séance (+1,11%) avec un momentum positif pour les 15 prochains jours.",
       "sentiment_web": "Positif",
       "sources": []
     },
     "LNBB": {
       "nom": "LOTERIE NATIONALE DU BENIN",
-      "recommandation": "Conservation",
-      "justification": "La dynamique haussière du jour (+3,85%) confirme l'engouement post-IPO, mais le PER de 17,7 invite à ne pas chasser le titre sur ces niveaux. Une phase de consolidation est attendue.",
+      "recommandation": "Achat modéré",
+      "justification": "Le titre maintient une dynamique haussière régulière et une bonne attractivité post-introduction, résistant bien aux turbulences du marché.",
       "sentiment_web": "Positif",
+      "sources": []
+    },
+    "ORAC": {
+      "nom": "ORANGE COTE D'IVOIRE",
+      "recommandation": "Achat fort",
+      "justification": "Forte impulsion haussière (+4,85%) soutenue par des volumes solides, confirmant son rôle moteur sur la cote avec un RSI parfaitement calibré à 51.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "CIEC": {
+      "nom": "CIE COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "Proche de la zone de survente (RSI 30), le titre teste un support technique malgré un PER relativement élevé de 25,38.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BICB": {
+      "nom": "BANQUE INTERNATIONALE POUR L’INDUSTRIE ET LE COMMERCE DU BENIN",
+      "recommandation": "Conservation",
+      "justification": "Le niveau de valorisation est raisonnable (PER 13,36), mais l'attentisme des investisseurs justifie d'attendre des signaux de reprise plus nets.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "ABJC": {
+      "nom": "SERVAIR ABIDJAN COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "En situation de survente extrême avec un RSI à 14, un rebond technique est probable à court terme mais la valorisation élevée incite à ne pas surpondérer.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "CBIBF": {
+      "nom": "CORIS BANK INTERNATIONAL BURKINA FASO",
+      "recommandation": "Achat modéré",
+      "justification": "Fondamentaux solides et gain appréciable de 1,64% à contre-courant du marché, offrant un ratio rendement/risque intéressant.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "CFAC": {
+      "nom": "CFAO MOTORS COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "La chute prononcée de 4,93% associée à un multiple de valorisation exigeant (PER 29) signale une poursuite du mouvement correctif.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "BOAB": {
+      "nom": "BANK OF AFRICA BENIN",
+      "recommandation": "Conservation",
+      "justification": "Simple consolidation technique (-1,07%) pour cette valeur bancaire aux assises solides, dont la tendance moyen terme reste saine.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BICC": {
+      "nom": "BICI COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "Le titre présente un multiple d'évaluation correct de 14,37 et consolide sans panique dans l'attente d'une accalmie du marché.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "BNBC": {
+      "nom": "BERNABE COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Le niveau de PER démesuré (>500) et l'érosion continue des cours incitent à arbitrer cette position vers des dossiers plus abordables.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "BOAN": {
+      "nom": "BANK OF AFRICA NIGER",
+      "recommandation": "Vente",
+      "justification": "Multiples de valorisation insoutenables et pression vendeuse persistante sur fond d'incertitudes géopolitiques régionales.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "STAC": {
+      "nom": "SETAO COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Forte baisse de 4,75% et rentabilité déficitaire qui rendent le titre particulièrement vulnérable en période de repli indiciel.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "SHEC": {
+      "nom": "VIVO ENERGY COTE D'IVOIRE",
+      "recommandation": "Conservation",
+      "justification": "Avec un RSI descendu à 21, la purge vendeuse semble proche de son terme, limitant les risques d'une nouvelle chute majeure à 15 jours.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "SIVC": {
+      "nom": "ERIUM COTE D’IVOIRE",
+      "recommandation": "Vente",
+      "justification": "PER disproportionné (87,68) combiné à une baisse continue du titre, signalant un désengagement progressif des institutionnels.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "SAFC": {
+      "nom": "SAFCA COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Forte correction journalière (-4,18%) et manque de visibilité sur les résultats, rendant le titre peu défensif dans le contexte actuel.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "FTSC": {
+      "nom": "FILTISAC COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "La valorisation est particulièrement tendue avec un PER supérieur à 54 et une dynamique baissière marquée. Malgré la proximité de la zone de survente (RSI 30), le sentiment général défavorable incite à l'allègement.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "ONTBF": {
+      "nom": "ONATEL BURKINA FASO",
+      "recommandation": "Conservation",
+      "justification": "Le titre affiche un PER raisonnable de 13,58 et un rendement traditionnellement solide, compensant le décrochage journalier. Il convient de temporiser à court terme le temps que la pression vendeuse se dissipe.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "SIBC": {
+      "nom": "SOCIETE IVOIRIENNE DE BANQUE COTE D'IVOIRE",
+      "recommandation": "Achat modéré",
+      "justification": "La banque fait preuve d'une belle résilience (+1,14%) à contre-courant d'un marché baissier, soutenue par des fondamentaux solides. Le RSI à 45 offre un point d'entrée intéressant sur un horizon de deux semaines.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "SICC": {
+      "nom": "SICOR COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Absence de rentabilité visible (PER indéterminé) et liquidité très étroite dans un marché en repli. Le profil risque/rendement demeure défavorable à court terme.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "UNLC": {
+      "nom": "UNILEVER COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Même si le RSI à 28 signale une survente technique, le PER exorbitant reflète des résultats structurellement dégradés. Aucun catalyseur haussier n'est identifié pour inverser la tendance sous 15 jours.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "TTLS": {
+      "nom": "TOTALENERGIES MARKETING SENEGAL",
+      "recommandation": "Conservation",
+      "justification": "Valeur défensive au profil distributif stable et aux ratios financiers modérés (PER 17,85, RSI 45). Elle devrait limiter les pertes dans un contexte de marché baissier.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "SOGC": {
+      "nom": "SOGB COTE D'IVOIRE",
+      "recommandation": "Achat modéré",
+      "justification": "Le PER attractif à 13,31 et un RSI neutre (45) confèrent à la valeur une marge de sécurité appréciable. Le repli journalier offre une opportunité de positionnement à bon compte.",
+      "sentiment_web": "Positif",
+      "sources": []
+    },
+    "BBGC": {
+      "nom": "BRIDGE BANK GROUP COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Avec un RSI extrême à 92, le titre est en surchauffe technique aiguë et appelle des prises de bénéfices imminentes. Le score IA médiocre de 4/10 renforce le risque de correction brutale.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "SDCC": {
+      "nom": "SODE COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Le titre atteint la borne de surachat (RSI 70) après une forte progression intrajournalière de 3,88%. Dans un marché globalement baissier, il est prudent de matérialiser ses gains.",
+      "sentiment_web": "Neutre",
+      "sources": []
+    },
+    "SDSC": {
+      "nom": "AFRICA GLOBAL LOGISTICS COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Le multiple de valorisation est excessif (PER supérieur à 210) pour un score IA limité à 4/10. La baisse du jour traduit le début d'un réajustement des cours.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "SEMC": {
+      "nom": "EVIOSYS PACKAGING SIEM COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Un score IA très faible (3/10) associé à un PER exigeant de 37,21 dans un secteur sans catalyseur immédiat. Le manque d'intérêt des investisseurs expose le titre à une dérive négative.",
+      "sentiment_web": "Négatif",
+      "sources": []
+    },
+    "TTLC": {
+      "nom": "TOTALENERGIES MARKETING COTE D'IVOIRE",
+      "recommandation": "Vente",
+      "justification": "Pénalisée par un score IA dégradé (3/10) et une chute de plus de 3% sur la séance, l'action subit des dégagements appuyés. Un retour vers des niveaux de valorisation plus attractifs est probable sous 15 jours.",
+      "sentiment_web": "Négatif",
       "sources": []
     }
   }
